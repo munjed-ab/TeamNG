@@ -1,0 +1,67 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/flatpickr.min.css' %}" />
+<!-- Custom CSS -->
+<style></style>
+
+<div class="container mt-5">
+  <!-- Date Picker -->
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <form id="date-form" method="GET" action="{% url 'activitylogs' %}">
+        <label class="form-label" for="date">Select Date:</label>
+        <input type="text" name="q" id="q" placeholder="" />
+      </form>
+    </div>
+  </div>
+  <h2 class="float-left">Activity Logs</h2>
+  <h2 class="float-right">{{date}}</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>User</th>
+          <th>Activity</th>
+          <th>Hours</th>
+          <th>Details</th>
+          <th>Date</th>
+          <th>Time Since</th>
+          <th>Action</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entry_logs %}
+        <tr>
+          <td>{{entry.user.username|capfirst}}</td>
+          <td>{{entry.project}}, {{entry.activity}}</td>
+          <td>{{entry.hours_worked|floatformat}}h</td>
+          <td>{{entry.details}}</td>
+          <td>{{entry.date|date:"Y-m-d"}}</td>
+          <td>{{entry.created|timesince}} ago</td>
+          <td>
+            <div class="update-icon float-left">
+              <!-- Update Icon -->
+              <a href="{% url 'update_entry' entry.id %}">
+                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+            <div class="delete-icon float-right">
+              <!-- Delete Icon -->
+              <a href="{% url 'delete_entry' entry.id %}">
+                <i class="fas fa-trash-alt mr-5 text-danger fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} {% block js %} {{ block.super }}
+<script src="{% static 'js/flatpicker.js' %}"></script>
+<script src="{% static 'js/activitylog.js' %}"></script>
+{% endblock %}

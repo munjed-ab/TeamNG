@@ -1,0 +1,58 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+
+<div class="container mt-5">
+  <h2 class="float-left">Users</h2>
+  <h2 class="float-right">
+    <a href="{% url 'create_user' %}">
+      <i class="fa fa-plus-circle fa-lg"></i
+    ></a>
+  </h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>profile</th>
+          <th>username</th>
+          <th>supervisor</th>
+          <th>first name</th>
+          <th>last name</th>
+          <th>email</th>
+          <th>manager</th>
+          <th>admin</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>
+            <a href="{% url 'profile' user.ID %}">
+              <img
+                class="img-profile rounded-circle"
+                style="width: 30px"
+                src="{{user.profile}}"
+            /></a>
+          </td>
+          <td>{{user.username}}</td>
+          <td>{{user.super}}</td>
+          <td>{{user.first_name}}</td>
+          <td>{{user.last_name}}h</td>
+          <td>{{user.email}}</td>
+          <td>{{user.is_manager}}</td>
+          <td>{{user.is_admin}}</td>
+          <td>
+            <div class="update-icon float-left">
+              <!-- Update Icon -->
+              <a href="{% url 'edit_user' user.ID %}">
+                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

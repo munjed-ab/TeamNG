@@ -1,0 +1,141 @@
+{% extends 'base.html' %} {% block content %} {% load static %}
+
+<div class="container mt-5">
+  <h1 class="text-center mb-3">{{ date }}</h1>
+  <br />
+  {% if not is_holiday %} {% if can_edit %}
+  <div class="row">
+    <!-- Add Activity Section -->
+    <div class="col-md-6 offset-md-3">
+      <div class="mb-3">
+        <h2 class="text-left">Add Activity</h2>
+        <div class="row">
+          <div class="col-md-10">
+            <div class="mb-3 float-left">
+              <label for="projectName" class="form-label">Project</label>
+              <br />
+              <select
+                class="form-select"
+                id="projectName"
+                name="projectName"
+                required
+              >
+                {% for project in projects %}
+                <option value="{{ project.project_name }}">
+                  {{ project.project_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="mb-3 float-right">
+              <label for="activityName" class="form-label">Activity Type</label>
+              <br />
+              <select
+                class="form-select"
+                id="activityName"
+                name="activityName"
+                required
+              >
+                {% for activity in activities %}
+                <option value="{{ activity.activity_name }}">
+                  {{ activity.activity_name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="details" class="form-label">Details</label>
+          <em style="color: orange">optional</em>
+          <textarea
+            class="form-control"
+            id="details"
+            name="details"
+            placeholder="Input Details.."
+            wrap="off"
+          ></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="decimalInput" class="form-label">Hours</label>
+          <input
+            type="number"
+            class="form-control"
+            placeholder="Enter Hours.."
+            required
+            oninput="checkNumberValidity()"
+            id="quantity"
+            name="quantity"
+            min="0"
+            max="8"
+            step="0.5"
+            pattern="\d+(\.\d{1,2})?"
+          />
+        </div>
+        <div class="text-center">
+          <button id="addactivity" class="btn btn-primary">Add Activity</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <h1 class="text-center mb-3 no-edit-warning">You can't edit on this date</h1>
+  {% endif %} {% else %}
+  <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
+  {% endif %}
+  <div class="row mt-5">
+    <!-- Activity Logs Section -->
+    <div class="col-md-10 offset-md-1">
+      <!-- Adjusted column width -->
+      <div class="table-responsive">
+        <h2 class="float-left mb-3">Activity Logs</h2>
+        <h2 id="total-hours" class="float-right">{{ total|floatformat }}h</h2>
+        <table class="table table-striped custom-table">
+          <!-- Added custom class -->
+          <thead class="table-head-color">
+            <tr>
+              <th>Project</th>
+              <th>Activity Type</th>
+              <th>Hours</th>
+              <th>Date</th>
+              <th>Details</th>
+              <th>Action</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody class="existing-entries">
+            <!-- Existing entries will be displayed here -->
+            {% for entry in entry_logs %}
+            <tr>
+              <td>{{entry.project}}</td>
+              <td>{{entry.activity}}</td>
+              <td>{{entry.hours_worked|floatformat}}h</td>
+              <td>{{entry.date|date:"Y-m-d"}}</td>
+              <td>{{entry.details}}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <!-- New entries will be added here dynamically -->
+          <tbody class="new-entries"></tbody>
+        </table>
+      </div>
+      <div class="text-center mt-3">
+        <button
+          id="save-button"
+          class="btn btn-primary"
+          style="background-color: var(--primary)"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block js %} {{ block.super }}
+<!--SECURE DATA TO JS-->
+{{ total|json_script:"total" }} {{ date|json_script:"date" }}
+{{request.user.daily_hours|json_script:"daily_hours"}}
+<script src="{% static 'js/registerpage.js' %}"></script>
+{% endblock %}

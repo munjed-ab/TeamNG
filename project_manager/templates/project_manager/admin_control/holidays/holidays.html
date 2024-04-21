@@ -1,0 +1,39 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+
+<div class="container mt-5">
+  <h2 class="float-left">Holidays</h2>
+  <h2 class="float-right">
+    <a href="{% url 'create_holiday' %}">
+      <i class="fa fa-plus-circle fa-lg"></i
+    ></a>
+  </h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>Holiday Name</th>
+          <th>Holiday Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for holiday in holidays %}
+        <tr>
+          <td>{{holiday.holiday_name}}</td>
+          <td>{{holiday.holiday_date|date:"Y-m-d"}}</td>
+          <td>
+            <div class="update-icon float-left">
+              <!-- Update Icon -->
+              <a href="{% url 'edit_holiday' holiday.id %}">
+                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

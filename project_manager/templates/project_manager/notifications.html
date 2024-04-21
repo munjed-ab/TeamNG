@@ -1,0 +1,176 @@
+{% extends 'base.html' %} {% block content %}{% load static%}
+
+<style>
+  #responseMessage {
+    padding-left: 20px;
+  }
+</style>
+<div class="container">
+  {% if leave_requests %}
+  <h2>Leave Requests</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Leave Type</th>
+          <th>Days</th>
+          <th>Time Since</th>
+          <th>Action</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in leave_requests %}
+        <tr>
+          <td>{{ request.id }}</td>
+          <td>{{ request.from_user }}</td>
+          <td>{{ request.start_date|date:"Y-m-d"}}</td>
+          <td>{{ request.end_date|date:"Y-m-d" }}</td>
+          <td>{{ request.leave_type }}</td>
+          <td>{{ request.v_days }}</td>
+          <td>{{ request.created|timesince }} ago</td>
+          <td>
+            <div class="accept-icon float-left">
+              <!-- Update Icon -->
+              <a
+                href="#"
+                class="response-btn"
+                data-leaveId="{{ request.id }}"
+                data-response="accept"
+              >
+                <i class="fas fa-check mr-2 text-success fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+            <div class="reject-icon float-right">
+              <!-- Delete Icon -->
+              <a
+                href="#"
+                class="response-btn"
+                data-leaveId="{{ request.id }}"
+                data-response="reject"
+              >
+                <i class="fas fa-times mr-5 text-danger fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %} {% if leave_response_rejected %}
+  <h2>Rejected Leaves</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <tbody>
+        {% for respond in leave_response_rejected %}
+        <tr>
+          <td class="text-center bold">
+            <b>
+              {{respond.to_user.username}}
+              <i style="color: red">rejected</i> your request for
+              {{respond.v_days }} days from {{respond.start_date|date:"Y-m-d"}}
+              to {{respond.end_date|date:"Y-m-d"}}
+              <sup
+                ><i style="color: royalblue"
+                  >{{respond.updated|timesince }} ago</i
+                ></sup
+              >
+            </b>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %} {% if leave_response_approved %}
+  <h2>Approved Leaves</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <tbody>
+        {% for respond in leave_response_approved %}
+        <tr>
+          <td class="text-center bold">
+            <b>
+              {{respond.to_user.username}}
+              <i style="color: green">approved</i> your request for
+              {{respond.v_days }} days from {{respond.start_date|date:"Y-m-d"}}
+              to {{respond.end_date|date:"Y-m-d"}}
+              <sup
+                ><i style="color: royalblue"
+                  >{{respond.updated|timesince }} ago</i
+                ></sup
+              >
+            </b>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <div
+    class="modal fade"
+    id="responseModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="responseModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <!-- Modal header -->
+        <div class="modal-header">
+          <h5 class="modal-title" id="responseModalLabel">
+            Respond to Leave Request
+          </h5>
+          <button
+            type="button"
+            class="close"
+            data-dismiss="modal"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <!-- Modal body (form for responding to the request) -->
+        <form id="responseForm" method="POST">
+          {% csrf_token %}
+          <div class="modal-body">
+            <!-- Hidden input field to store the ID of the leave request -->
+            <input
+              type="hidden"
+              id="leaveRequestId"
+              name="leaveRequestId"
+              value=""
+            />
+            <!-- Hidden input field to store the response (accept/reject) -->
+            <input type="hidden" id="response" name="response" value="" />
+          </div>
+          <h4 id="responseMessage"></h4>
+          <!-- Modal footer with buttons for submitting the form or closing the modal -->
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="submit" class="btn btn-primary">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block js %} {{ block.super }}
+<script src="{% static 'js/notifications.js' %}"></script>
+{% endblock %}

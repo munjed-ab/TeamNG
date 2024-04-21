@@ -1,0 +1,300 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+<style>
+  .form-control {
+    border: 2px solid #ffffff;
+    background: var(--primary);
+    color: white;
+    -webkit-appearance: none;
+  }
+</style>
+<link
+  href="{% static 'vendor/fontawesome-free/css/all.min.css' %}"
+  rel="stylesheet"
+/>
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div id="calendar"></div>
+  <div class="row legend-rowl">
+    <div class="col">
+      <div class="legend">
+        <div class="color-box least"></div>
+        <div class="legend-text">0</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="legend">
+        <div class="color-box middle"></div>
+        <div class="legend-text">
+          1 - {{request.user.daily_hours|add:"-1"|floatformat}}
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="legend">
+        <div class="color-box most"></div>
+        <div class="legend-text">{{request.user.daily_hours|floatformat}}</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="legend">
+        <div class="color-box holidays"></div>
+        <div class="legend-text">holidays</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="legend">
+        <div class="color-box leaves"></div>
+        <div class="legend-text">leave days</div>
+      </div>
+    </div>
+  </div>
+  <!-- Content Row -->
+
+  <!-- Filters Section -->
+  <div class="row mb-4">
+    <div class="col-md-3 wrapper-filter">
+      <label for="month-filter">Month:</label>
+      <select id="month-filter" class="form-control">
+        <option value="all">All Months</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+        <!-- Add options for all 12 months -->
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="year-filter">Year:</label>
+      <select id="year-filter" class="form-control">
+        <!-- Add options dynamically using JavaScript/jQuery if needed -->
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2025">2026</option>
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="project-filter">Project:</label>
+      <select id="project-filter" class="form-control">
+        <option value="all">All Projects</option>
+        {% for project in projects %}
+        <option value="{{project.id}}">{{project.project_name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <!--CARDS-->
+  <div class="row">
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Expected Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 ex-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Missed Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 m-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Pending Requests Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-blue text-uppercase mb-1"
+              >
+                Worked Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 w-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Percentage Complete
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div
+                    class="h5 mb-0 mr-3 font-weight-bold text-gray-800 perc-c"
+                  ></div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div
+                      class="progress-bar-perc bg-info"
+                      role="progressbar"
+                      style=""
+                      aria-valuenow="0"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-light shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-uppercase mb-1"
+                style="color: brown"
+              >
+                Public Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 pub-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-dark shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-dark text-uppercase mb-1"
+              >
+                Leave Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 l-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-coffee fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--BARS-->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+    </div>
+    <div class="card-body-projects"></div>
+  </div>
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Activity Types</h6>
+    </div>
+    <div class="card-body-activity"></div>
+  </div>
+  <!--MODAL -->
+  <div
+    class="modal fade"
+    id="activityLogsModal"
+    tabindex="-1"
+    aria-labelledby="activityLogsModalLabel"
+    aria-hidden="true"
+  >
+    <div
+      class="modal-dialog modal-lg card-border-left-excel card-border-bottom-excel"
+    >
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title text-primary" id="activityLogsModalLabel">
+            Activity Logs
+          </h3>
+          <i
+            class="fa fa-times fa-2x btn-close"
+            style="cursor: pointer"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></i>
+        </div>
+        <div class="modal-body">
+          <i
+            id="downloadExcelBtn"
+            class="fa fa-file-excel fa-2x"
+            style="
+              color: green;
+              cursor: pointer;
+              position: absolute;
+              right: 6px;
+            "
+          >
+          </i>
+          <div id="activityLogsList" class="list-group table-responsive">
+            <!-- Activity logs will be populated here dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /.container-fluid -->
+
+{% endblock %} {% block js %} {{ block.super }}
+<script src="{% static 'js/index.global.min.js' %}"></script>
+{{request.user.daily_hours|json_script:"daily_hours"}}
+<script src="{% static 'js/calendar.js' %}"></script>
+{{user.id|json_script:"user_id" }}{{user.username|json_script:"user_name" }}
+<script src="{% static 'js/user_overview.js' %}"></script>
+{% endblock %}

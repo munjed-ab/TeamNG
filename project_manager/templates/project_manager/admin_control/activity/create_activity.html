@@ -1,0 +1,85 @@
+{% extends 'base.html' %} {% block content %} {% load static %}
+<style>
+  .user-form {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  label {
+    display: block;
+    font-weight: bold;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  span.error {
+    color: red;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.error li {
+    color: red;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.help {
+    color: orange;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.help li {
+    color: orange;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+<div class="container">
+  <h2>Create Activity Type</h2>
+  <form method="POST" action="" class="user-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ form.activity_name.id_for_label }}"
+        >Activity Type Name</label
+      >
+      {{ form.activity_name }}
+      <span class="help">{{ form.activity_name.help_text }}</span>
+      <span class="error">{{ form.activity_name.errors }}</span>
+    </div>
+    <div style="text-align: center">
+      <button type="submit" class="btn btn-primary">Create Activity</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  var form_fields = document.getElementsByTagName("input");
+  form_fields[1].placeholder = "Enter activity name..";
+</script>
+
+{% endblock %}

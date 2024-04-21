@@ -1,0 +1,320 @@
+{% extends 'base.html' %} {% block content %} {% load static %}
+
+<style>
+  .form-control {
+    border: 2px solid #ffffff;
+    background: var(--primary);
+    color: white;
+    -webkit-appearance: none;
+  }
+</style>
+<link
+  href="{% static 'vendor/fontawesome-free/css/all.min.css' %}"
+  rel="stylesheet"
+/>
+
+<!-- Begin Page Content -->
+<div class="container-fluid">
+  <!-- Page Heading -->
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Analysis Overview</h1>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="row mb-4">
+    <div class="col-md-3 wrapper">
+      <label for="month-filter">Month:</label>
+      <select id="month-filter" class="form-control">
+        <option value="all">All Months</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+        <!-- Add options for all 12 months -->
+      </select>
+    </div>
+    <div class="col-md-3 wrapper">
+      <label for="year-filter">Year:</label>
+      <select id="year-filter" class="form-control">
+        <!-- Add options dynamically using JavaScript/jQuery if needed -->
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+    <div class="col-md-3 wrapper">
+      <label for="user-filter">User:</label>
+      <select id="user-filter" class="form-control">
+        <option value="all">All Users</option>
+        {% for user in users %}
+        <option value="{{user.id}}">{{user.username}}</option>
+        {% endfor %}
+        <!-- Add options dynamically using AJAX if needed -->
+      </select>
+    </div>
+    <div class="col-md-3 wrapper">
+      <label for="department-filter">Department:</label>
+      <select id="department-filter" class="form-control">
+        <option value="all">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{dept.id}}">{{dept.dept_name}}</option>
+        {% endfor %}
+        <!-- Add options dynamically using AJAX if needed -->
+      </select>
+    </div>
+    <div class="col-md-3 wrapper">
+      <label for="project-filter">Project:</label>
+      <select id="project-filter" class="form-control">
+        <option value="all">All Projects</option>
+        {% for project in projects %}
+        <option value="{{project.id}}">{{project.project_name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <!--CARDS-->
+  <div class="row">
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Expected Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 ex-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Missed Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 m-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Pending Requests Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-blue text-uppercase mb-1"
+              >
+                Worked Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 w-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-check fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Earnings (Monthly) Card Example -->
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Percentage Complete
+              </div>
+              <div class="row no-gutters align-items-center">
+                <div class="col-auto">
+                  <div
+                    class="h5 mb-0 mr-3 font-weight-bold text-gray-800 perc-c"
+                  ></div>
+                </div>
+                <div class="col">
+                  <div class="progress progress-sm mr-2">
+                    <div
+                      class="progress-bar-perc bg-info"
+                      role="progressbar"
+                      style=""
+                      aria-valuenow="0"
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-light shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-uppercase mb-1"
+                style="color: brown"
+              >
+                Public Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 pub-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-md-3 mb-4">
+      <div class="card card-border-left-dark shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-dark text-uppercase mb-1"
+              >
+                Leave Hours
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800 l-h"></div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-coffee fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--CHARTS-->
+  <div>
+    <canvas id="chart"></canvas>
+  </div>
+  <br />
+  <!--BARS-->
+  <div class="card shadow mb-4">
+    <div class="card-header py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
+    </div>
+    <div class="card-body-projects"></div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <!-- Pie Chart -->
+      <div class="row">
+        <div class="col-xl-6 col-lg-8">
+          <!-- Pie Chart -->
+          <div class="card shadow mb-4">
+            <!-- Card Header - Dropdown -->
+            <div
+              class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+            >
+              <h6 class="m-0 font-weight-bold text-primary">
+                Activity Type Percentage
+              </h6>
+            </div>
+            <!-- Card Body -->
+            <div class="card-body">
+              <div class="chart-pie pt-4 pb-2">
+                <canvas id="pie-chart"></canvas>
+              </div>
+              <div class="row mb-4 text-center small" id="labels-pie"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-6 col-lg-4">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">
+                Activity Types Progress
+              </h6>
+            </div>
+            <div class="card-body-activity"></div>
+          </div>
+        </div>
+      </div>
+
+      <!--MODAL -->
+      <div
+        class="modal fade"
+        id="activityLogsModal"
+        tabindex="-1"
+        aria-labelledby="activityLogsModalLabel"
+        aria-hidden="true"
+      >
+        <div
+          class="modal-dialog modal-lg card-border-left-excel card-border-bottom-excel"
+        >
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title text-primary" id="activityLogsModalLabel">
+                Activity Logs
+              </h3>
+              <i
+                class="fa fa-times fa-2x btn-close"
+                style="cursor: pointer"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></i>
+            </div>
+            <div class="modal-body">
+              <i
+                id="downloadExcelBtn"
+                class="fa fa-file-excel fa-2x"
+                style="
+                  color: green;
+                  cursor: pointer;
+                  position: absolute;
+                  right: 6px;
+                "
+              >
+              </i>
+              <div id="activityLogsList" class="list-group table-responsive">
+                <!-- Activity logs will be populated here dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block js %} {{ block.super }}
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+<script src="{% static 'js/admin/overview.js' %}"></script>
+{% endblock %}

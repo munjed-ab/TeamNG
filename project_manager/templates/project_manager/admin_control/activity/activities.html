@@ -1,0 +1,37 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+
+<div class="container mt-5">
+  <h2 class="float-left">Activity Types</h2>
+  <h2 class="float-right">
+    <a href="{% url 'create_activity' %}">
+      <i class="fa fa-plus-circle fa-lg"></i
+    ></a>
+  </h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>Activity Type Name</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for activity in activities %}
+        <tr>
+          <td>{{activity.activity_name}}</td>
+          <td>
+            <div class="update-icon float-left">
+              <!-- Update Icon -->
+              <a href="{% url 'edit_activity' activity.id %}">
+                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

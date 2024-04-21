@@ -1,0 +1,114 @@
+{% extends 'base.html' %} {% block content %} {% load static %}
+
+<style>
+  .card {
+    border: none;
+    border-radius: 20px;
+    background-color: #2c3e50;
+    color: white;
+    margin-bottom: 30px;
+  }
+
+  .card-body {
+    padding: 40px;
+  }
+
+  .card-title {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  .rounded-circle-profile {
+    border-radius: 50% !important;
+    border: 2px solid white;
+  }
+  .card-text {
+    font-size: 16px;
+    color: white;
+  }
+  .text-primary {
+    color: RGB(99, 136, 199) !important;
+  }
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+  .edit-img {
+    position: sticky;
+    top: 100px;
+    right: 40px;
+    background-color: RGB(99, 136, 199);
+  }
+  .profile-breaker {
+    background-color: white;
+  }
+</style>
+<div class="container">
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+      <div class="card shadow">
+        <div class="card-body">
+          {% if request.user == user %}
+          <a
+            href="{% url 'upload_profile_image' %}"
+            class="btn btn-primary btn-sm edit-img"
+          >
+            <i class="fas fa-edit mr-1"></i>Edit
+          </a>
+          {% endif %}
+          <div class="text-center">
+            <img
+              src="{{ user.profile.profile_img.url }}"
+              class="img-fluid rounded-circle-profile mb-3"
+              style="width: 150px; height: 150px"
+              alt="Profile Picture"
+            />
+            <h2 class="card-title mb-0">{{ user.get_full_name }}</h2>
+            <p class="card-text text-muted">@{{ user.username }}</p>
+          </div>
+          <hr class="profile-breaker" />
+          {% if user.is_manager %}
+          <div class="text-center mt-3">
+            <h5 class="text-success">Manager</h5>
+          </div>
+          {% elif user.is_admin %}
+          <div class="text-center mt-3">
+            <h5 class="text-success">Admin</h5>
+          </div>
+          {% else %}
+          <div class="text-center mt-3">
+            <h5 class="text-success">Employee</h5>
+          </div>
+          {% endif %}
+          <br />
+          <div class="row">
+            <div class="col-md-4">
+              <h5 class="text-primary">Department</h5>
+              <p>{{ user.department }}</p>
+            </div>
+            <div class="col-md-4">
+              <h5 class="text-primary">Location</h5>
+              <p>{{ user.location }}</p>
+            </div>
+            <div class="col-md-4">
+              <h5 class="text-primary">Email</h5>
+              <p>{{ user.email }}</p>
+            </div>
+          </div>
+          {% if request.user == user %}
+          <div class="text-center mt-4">
+            <a href="{% url 'password_reset' %}" class="btn btn-danger"
+              >Reset Password</a
+            >
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

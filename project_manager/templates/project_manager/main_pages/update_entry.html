@@ -1,0 +1,216 @@
+{% extends 'base.html' %} {% block content %}
+
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+
+<div class="container-fluid">
+  <div class="container mt-5">
+    <h2>Update Activity</h2>
+    <form id="updateactivity" action="" method="POST">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="projectName" class="form-label">Project Name</label>
+        <select
+          class="form-select"
+          id="projectName"
+          name="projectName"
+          required
+          value="{{old_entry.project}}"
+        >
+          {% for project in projects %}
+          <option value="{{ project.project_name }}">
+            {{ project.project_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="activityName" class="form-label">Activity Name</label>
+        <select
+          class="form-select"
+          id="activityName"
+          name="activityName"
+          required
+          value="{{old_entry.activity}}"
+        >
+          {% for activity in activities %}
+          <option value="{{ activity.activity_name }}">
+            {{ activity.activity_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="date" class="form-label">Date</label>
+        <input
+          type="text"
+          class="form-control"
+          id="datepicker"
+          name="datepicker"
+          placeholder="Select Date"
+          required
+          value='{{old_entry.date|date:"Y-m-d"}}'
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="details" class="form-label">Details</label>
+        <em style="color: orange">optional</em>
+        <textarea
+          type="text"
+          class="form-control"
+          id="details"
+          name="details"
+          placeholder="Input Details.."
+          wrap="off"
+        >
+        </textarea>
+      </div>
+
+      <div class="mb-3">
+        <label for="decimalInput" class="form-label">Hours</label>
+        <input
+          type="number"
+          class="form-control"
+          placeholder="Enter Decimal Number"
+          required
+          oninput="checkNumberValidity()"
+          id="quantity"
+          name="quantity"
+          min="0"
+          max="20"
+          step="0.5"
+          pattern="\d+(\.\d{1,2})?"
+          value="{{old_entry.hours_worked|floatformat}}"
+        />
+      </div>
+      <button id="submit" type="submit" class="btn btn-primary">Update</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  function fetchDisabledDates() {
+
+      var disabledDates = [];
+      {% for holiday in holidays %}
+          disabledDates.push('{{ holiday.holiday_date|date:"Y-m-d" }}');
+      {% endfor %}
+      return disabledDates
+  }
+
+
+  $(document).ready(function () {
+    // Fetch disabled dates from the database
+    var disabledDates = fetchDisabledDates();
+
+    // Initialize Flatpickr datepicker
+    flatpickr("#datepicker", {
+      dateFormat: "Y-m-d", // Set date format
+      maxDate: "today", // Disable selecting future dates
+      disable: [
+        function (date) {
+          // Disable Sundays (0 is Sunday, 1 is Monday, ..., 6 is Saturday)
+          if (date.getDay() === 0) return true;
+
+          // Disable the second and fourth Saturdays
+          if (date.getDay() === 6) {
+            var weekOfMonth = Math.floor((date.getDate() - 1) / 7) + 1;
+            if (weekOfMonth === 2 || weekOfMonth === 4) {
+              return true;
+            }
+          }
+          var today = new Date();
+
+          // Disable dates from the future months
+            if ((date.getMonth() >= today.getMonth()) && (date.getYear() >= today.getYear()) && (date.getDate() > today.getDate())) {
+                return true;
+            }
+
+            // Allow dates from last month only if today is before the 25th
+          if (date.getMonth() === ((today.getMonth() - 1 + 12) % 12)){
+            if (today.getDate() > 11 )
+                return true;
+          }
+
+          if (
+            disabledDates.includes(
+              date.getFullYear() +
+                "-" +
+                ("0" + (date.getMonth() + 1)).slice(-2) +
+                "-" +
+                ("0" + date.getDate()).slice(-2)
+            )
+          ) {
+            return true;
+          }
+
+
+          return false;
+        },
+      ],
+    });
+  });
+</script>
+
+<script>
+  function checkNumberValidity() {
+    var numberInput = document.getElementById("quantity");
+    var countdigits = numberInput.value.length;
+    var userInput = parseFloat(numberInput.value);
+    const daily_hours = {{request.user.daily_hours}}
+    if (userInput < 0 || userInput > daily_hours) {
+      createToast(
+        `Please enter a number between 0 and ${parseFloat(daily_hours)}.`,
+        "error"
+      );
+      numberInput.value = "";
+    }
+    if(countdigits > 4){
+      createToast(
+        `Too many digits entered`,
+        "error"
+      );
+      numberInput.value = "";
+    }
+  }
+</script>
+<script>
+  var details = document.getElementById("details");
+  details.value = "{{old_entry.details}}";
+  // Function to validate the date input field
+  function validateDate() {
+    var datePicker = document.getElementById("datepicker");
+    var selectedDate = datePicker.value;
+
+    // Check if the date input is empty
+    if (!selectedDate) {
+      alert("Please select a date.");
+      return false; // Prevent form submission
+    }
+
+    // Check if the entered date is a valid date
+    if (isNaN(Date.parse(selectedDate))) {
+      alert("Please enter a valid date.");
+      return false; // Prevent form submission
+    }
+
+    // Date is valid, allow form submission
+    return true;
+  }
+
+  // Attach the validation function to the form's submit event
+  document
+    .getElementById("updateactivity")
+    .addEventListener("submit", function (event) {
+      if (!validateDate()) {
+        event.preventDefault(); // Prevent form submission if validation fails
+      }
+    });
+</script>
+{% endblock %}

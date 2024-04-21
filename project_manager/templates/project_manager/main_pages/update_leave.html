@@ -1,0 +1,217 @@
+{% extends 'base.html' %} {% block content %}
+<link
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+/>
+
+<style>
+  .flatpickr-calendar {
+    z-index: 10000; /* Increase z-index to ensure calendar appears above other elements */
+  }
+
+  .flatpickr-day.selected.startRange,
+  .flatpickr-day.selected.endRange {
+    background-color: #4caf50 !important; /* Change background color of selected range */
+    color: #fff !important; /* Change text color of selected range */
+  }
+</style>
+
+<div class="container-fluid">
+  <div class="container mt-5">
+    <h2>Update Leave</h2>
+    <form id="addleave" action="" method="POST">
+      {% csrf_token %} {% if request.user.is_superuser %}
+      <br />
+      {% elif request.user.is_manager %}
+      <div class="mb-3">
+        <label for="from" class="form-label">Admin</label>
+        <select class="form-select" id="adminName" name="adminName" required>
+          {% for admin in admins %}
+          <option value="{{ admin.username }}">{{ admin.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="mb-3">
+        <label for="from" class="form-label">Manager</label>
+        <select
+          class="form-select"
+          id="managerName"
+          name="managerName"
+          required
+        >
+          {% for manager in managers %}
+          <option value="{{ manager.username }}">{{ manager.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="mb-3">
+        <label for="startDate" class="form-label">Start Date</label>
+        <input
+          type="text"
+          class="form-control"
+          id="startDate"
+          name="startDate"
+          placeholder="Select Start Date"
+          required
+          value='{{ leave.start_date|date:"Y-m-d" }}'
+        />
+      </div>
+
+      <!-- HTML for End Date Picker -->
+      <div class="mb-3">
+        <label for="endDate" class="form-label">End Date</label>
+        <input
+          type="text"
+          class="form-control"
+          id="endDate"
+          name="endDate"
+          placeholder="Select End Date"
+          required
+          value='{{ leave.end_date|date:"Y-m-d" }}'
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Leave Type:</label>
+        <div class="row">
+          <div class="col">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="leaveType"
+                id="sickLeave"
+                value="sick"
+                required
+              />
+              <label class="form-check-label" for="sickLeave"> Sick </label>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="leaveType"
+                id="casualLeave"
+                value="casual"
+                required
+              />
+              <label class="form-check-label" for="casualLeave"> Casual </label>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="leaveType"
+                id="annualLeave"
+                value="annual"
+                required
+              />
+              <label class="form-check-label" for="annualLeave"> Annual </label>
+            </div>
+          </div>
+          <div class="col">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="leaveType"
+                id="holidayLeave"
+                value="holiday"
+                required
+              />
+              <label class="form-check-label" for="holidayLeave">
+                Holiday
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button id="submitBtn" type="submit" class="btn btn-primary">
+        Add Leave
+      </button>
+    </form>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  flatpickr("#startDate", {
+    dateFormat: "Y-m-d",
+    minDate: "",
+    onClose: function (selectedDates, dateStr, instance) {
+      const endDatePicker = document.getElementById("endDate")._flatpickr;
+      if (endDatePicker) {
+        endDatePicker.set("minDate", dateStr);
+      }
+    },
+    onChange: function (selectedDates, dateStr, instance) {
+      const endDatePicker = document.getElementById("endDate")._flatpickr;
+      if (endDatePicker) {
+        // Update minDate of endDatePicker to be the next day of startDate
+        endDatePicker.set("minDate", new Date(selectedDates[0]).fp_incr(1));
+      }
+    },
+  });
+
+  flatpickr("#endDate", {
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    onClose: function (selectedDates, dateStr, instance) {
+      const startDatePicker = document.getElementById("startDate")._flatpickr;
+      if (startDatePicker) {
+        startDatePicker.set("maxDate", dateStr);
+      }
+    },
+    onChange: function (selectedDates, dateStr, instance) {
+      const startDatePicker = document.getElementById("startDate")._flatpickr;
+      if (startDatePicker) {
+        // Update maxDate of startDatePicker to be the previous day of endDate
+        startDatePicker.set("maxDate", new Date(selectedDates[0]).fp_incr(-1));
+      }
+    },
+  });
+</script>
+<script>
+  radios = document.querySelectorAll("input[type=radio]");
+  radios.forEach(function (input) {
+    if (input.value === "{{leave.leave_type}}") {
+      input.checked = true;
+    }
+  });
+
+  function validateForm() {
+    var inputs = document.querySelectorAll("input, select, textarea");
+
+    var isValid = true;
+
+    inputs.forEach(function (input) {
+      if (!input.value.trim()) {
+        isValid = false;
+      }
+    });
+
+    return isValid;
+  }
+
+  document
+    .getElementById("addleave")
+    .addEventListener("submit", function (event) {
+      if (!validateForm()) {
+        event.preventDefault();
+        alert("Please fill in all required fields.");
+      }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Team Information</title>
+  </head>
+  <body style="margin: 0; padding: 0; font-family: Arial, sans-serif">
+    <table
+      role="presentation"
+      cellspacing="0"
+      cellpadding="0"
+      border="0"
+      align="center"
+      style="max-width: 600px; margin: 0 auto"
+    >
+      <!-- Header -->
+      <tr>
+        <td
+          bgcolor="#2c3e50"
+          style="
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 10px;
+          "
+        >
+          <img
+            src="data:image/jpeg;base64,{{ logo_base64 }}"
+            alt="Team Information Logo"
+            style="display: block; width: 100%; border-radius: 15px"
+          />
+        </td>
+      </tr>
+      <!-- Content -->
+      <tr>
+        <td bgcolor="#2c3e50" style="color: white; padding: 15px">
+          <p>Hi {{ username|upper }},</p>
+          <p>You created an account on Team Information.</p>
+          <p style="margin-top: 40px">
+            Visit:
+            <a style="color: black" href="https://{{ domain }}"
+              >https://{{ domain }}</a
+            >
+          </p>
+          <p>The Team Ltd</p>
+        </td>
+      </tr>
+      <!-- Footer -->
+      <tr>
+        <td
+          align="center"
+          bgcolor="#2c3e50"
+          style="
+            padding: 20px 0;
+            color: #838080;
+            border-bottom-right-radius: 10px;
+            border-bottom-left-radius: 10px;
+          "
+        >
+          <p>&copy; {% now 'Y' %} T.E.A.M</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+{% extends 'base.html' %} {% block content %}
+<style></style>
+<div class="container mt-5">
+  <h2>Leave Logs</h2>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>From</th>
+          <th>To</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Leave Type</th>
+          <th>Days</th>
+          <th>Time Since</th>
+          <th>Status</th>
+          <th>Action</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in leave_logs %}
+        <tr>
+          <td>{{ request.from_user.username }}</td>
+          <td>{{ request.to_user.username }}</td>
+          <td>{{ request.start_date|date:"Y-m-d"}}</td>
+          <td>{{ request.end_date|date:"Y-m-d" }}</td>
+          <td>{{ request.leave_type }}</td>
+          <td>{{ request.v_days }}</td>
+          <td>{{ request.created|timesince }} ago</td>
+          <td>
+            {% if request.is_approved and not request.is_rejected %}
+            <p style="color: green">Accepted</p>
+            {% elif request.is_rejected and not request.is_approved %}
+            <p style="color: red">Rejected</p>
+            {% else %}
+            <p style="color: orange">Pending</p>
+            {% endif %}
+          </td>
+          <td>
+            {% if not request.is_approved and not request.is_rejected %}
+
+            <div class="update-icon float-left">
+              <!-- Update Icon -->
+              <a href="{% url 'update_leave' request.id %}">
+                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+            <div class="delete-icon float-right">
+              <!-- Delete Icon -->
+              <a href="{% url 'delete_leave' request.id %}">
+                <i class="fas fa-trash-alt mr-5 text-danger fa-1x"></i>
+                <!-- Adjust size with fa-2x, fa-3x, etc. -->
+              </a>
+            </div>
+
+            {% else %} _ {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

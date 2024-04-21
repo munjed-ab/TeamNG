@@ -1,0 +1,83 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+<style>
+  .user-form {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  /* Style for the file input */
+  .custom-file-input {
+    color: transparent; /* Hide the file input text */
+    cursor: pointer;
+  }
+
+  /* Style for the file input button */
+  .custom-file-button {
+    background-color: #4e73df; /* Button background color */
+    color: white; /* Button text color */
+    padding: 10px 20px; /* Button padding */
+    border: none; /* Remove button border */
+    border-radius: 5px; /* Add button border radius */
+    cursor: pointer;
+  }
+
+  /* Style for the file input button on hover */
+  .custom-file-button:hover {
+    background-color: #0056b3; /* Change button background color on hover */
+  }
+  span.help {
+    color: orange;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+
+  span.error li {
+    color: red;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+</style>
+
+<div class="container">
+  <h2>Upload Image</h2>
+  <form
+    method="post"
+    enctype="multipart/form-data"
+    class="user-form"
+    onsubmit="return validateFileType()"
+  >
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="custom-file-button">
+        Choose File
+        <input
+          type="file"
+          name="profile_img"
+          id="id_profile_img"
+          accept="image/jpeg, image/jpg, image/png"
+          required
+        />
+      </label>
+      {% if form.profile_img.errors %}
+      <span class="error">{{ form.profile_img.errors }}</span>
+      {% endif %}
+      <span class="help">{{ form.profile_img.help_text }}</span>
+    </div>
+    <div style="text-align: center">
+      <button type="submit" class="btn btn-primary">Upload</button>
+    </div>
+  </form>
+</div>
+<script src="{% static 'js/upload_img.js' %}"></script>
+{% endblock %}

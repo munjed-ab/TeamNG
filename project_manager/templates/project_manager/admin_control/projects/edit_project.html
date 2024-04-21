@@ -1,0 +1,89 @@
+{% extends 'base.html' %} {% block content %} {% load static %}
+<style>
+  .user-form {
+    max-width: 400px;
+    margin: auto;
+    padding: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  label {
+    display: block;
+    font-weight: bold;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  span.error {
+    color: red;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.error li {
+    color: red;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.help {
+    color: orange;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+  span.help li {
+    color: orange;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    list-style-type: none;
+    text-decoration: none;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+<div class="container">
+  <h2>Edit Project</h2>
+  <form method="POST" action="" class="user-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="{{ project.project_name.id_for_label }}">Project Name</label>
+      <input
+        type="text"
+        name="project_name"
+        id="project_name"
+        value="{{project.project_name}}"
+        required
+      />
+      <span class="help">{{ project.project_name.help_text }}</span>
+      <span class="error">{{ project.project_name.errors }}</span>
+    </div>
+    <div style="text-align: center">
+      <button type="submit" class="btn btn-primary">Edit Project</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  var form_fields = document.getElementsByTagName("input");
+  form_fields[1].placeholder = "Enter project name..";
+</script>
+
+{% endblock %}

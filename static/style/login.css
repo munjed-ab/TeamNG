@@ -1,0 +1,199 @@
+body,
+html {
+  height: 100%;
+  background-color: #858796;
+  font-family: "Courier New";
+}
+
+.container-log {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    to bottom right,
+    #2c3e50,
+    #858796
+  ); /* Background gradient */
+  height: 87%;
+  font-family: "Nunito", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Symbol", "Noto Color Emoji", "sans-serif",
+    "Apple Color Emoji", "Courier New";
+}
+.container-setpass {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    to bottom right,
+    #2c3e50,
+    #858796
+  ); /* Background gradient */
+  height: 130%;
+  font-family: "Nunito", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif,
+    "Apple Color Emoji", "Segoe UI Symbol", "Noto Color Emoji", "sans-serif",
+    "Apple Color Emoji", "Courier New";
+}
+
+.logo {
+  position: absolute;
+  top: 20px; /* Adjust as needed */
+  left: 20px; /* Adjust as needed */
+  z-index: 1; /* Ensure the logo stays on top */
+}
+.logo img {
+  width: 130px;
+  height: 70px;
+}
+
+.card-log {
+  width: 90%;
+  max-width: 800px; /* Limiting the max-width for larger screens */
+  border-radius: 20px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: row;
+  overflow: hidden; /* Ensure the image does not exceed the card */
+  margin-top: 60px;
+}
+
+.login-section {
+  flex: 1;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dee2e6; /* Adding a border between the sections */
+  padding: 10px;
+}
+
+.image-section {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card-body {
+  padding: 10px;
+}
+
+li {
+  color: red;
+  font-size: 15px;
+  margin: 0px;
+  padding: 0;
+  list-style-type: none;
+  text-decoration: none;
+}
+button {
+  border-radius: 30px;
+}
+button:hover {
+  background-color: #0056b3;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-evenly;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin: 15px;
+}
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  border-radius: 15px;
+  height: 35px;
+  width: 90%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* Responsive styling */
+@media (max-width: 550px) {
+  .card {
+    flex-direction: column;
+  }
+
+  .login-section,
+  .image-section {
+    flex: none;
+    width: 100%;
+    border-right: none; /* Remove the border between sections on smaller screens */
+  }
+}
+@media (max-width: 970px) {
+  .partners-container {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+p {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+label {
+  position: relative;
+  right: 0%;
+}
+.submit {
+  margin-top: 5px;
+  color: white;
+  width: 90%;
+  background-color: #2c3e50;
+  border-radius: 15px;
+  border: 0px;
+  padding: 5px;
+}
+.form-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.card-header-login {
+  background-color: #f8f9fa;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.card-header h3 {
+  border-radius: 20px;
+}
+.card-body .msg {
+  color: #36d14b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+/* Partner logo styling */
+.partners-container {
+  background: linear-gradient(
+    to bottom right,
+    #858796,
+    #2c3e50
+  ); /* Background gradient */
+  border-radius: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0;
+}
+
+.partner-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  margin: 0 1px; /* Adjust spacing between partner logos */
+  overflow: hidden;
+}
+
+.partner-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
