@@ -1,14 +1,14 @@
 # Employee Management System
 
-The Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and user profiles. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports (still under development) and resetting passwords via email confirmation.
+This Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and user profiles. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports (still under development) and resetting passwords via email confirmation.
 
 ## Features
 
-- User Management: Allows users to log in, view their profiles, and reset passwords via email confirmation.
-- Work Hour Logging: Employees can log their work hours for different projects and activity types.
+- User Auth: Allows users to log in, view their profiles, and reset passwords via email confirmation.
+- Work Hour Logging: Users can log their work hours for different projects and activity types.
 - Leave Management: Users can request leave, which must be approved by their manager or admin.
-- Manager Oversight: Managers can view and manage the work hours of employees within their department and location.
-- Admin Dashboard: Provides admins with access to all user data and extensive reporting capabilities.
+- Manager Overview: Managers can view and manage the work hours of employees within their department and location.
+- Admin Overview: Provides admins with access to all user data and extensive reporting capabilities.
 - Reporting: Allows users to generate reports with statistics and insights.
 
 ## Tech Stack
