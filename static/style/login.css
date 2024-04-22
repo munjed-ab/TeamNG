@@ -61,6 +61,7 @@ html {
   background-color: #f8f9fa;
   border-right: 1px solid #dee2e6; /* Adding a border between the sections */
   padding: 10px;
+  opacity: 0.9;
 }
 
 .image-section {
@@ -68,6 +69,7 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
+  opacity: 0.9;
 }
 
 .card-body {
