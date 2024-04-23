@@ -386,7 +386,6 @@ def overview_data(request):
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
-@login_required(login_url="login")
 @ensure_csrf_cookie
 def overview_manager_data(request):
     if not request.user.is_authenticated:
@@ -569,7 +568,7 @@ def overview_manager_data(request):
 
 
 @ensure_csrf_cookie
-def overview_user_data(request):
+def overview_user_data(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
@@ -579,7 +578,7 @@ def overview_user_data(request):
     try:
         month = request.GET.get("month")
         year = request.GET.get("year")
-        user_id = request.GET.get("user")
+        user_id = int(pk)
         project_id = request.GET.get("project")
 
         order_start = date.today()
@@ -721,6 +720,60 @@ def overview_user_data(request):
             
             # Return the filtered data as JSON response
             return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+    
+
+# USER REPORTS
+@ensure_csrf_cookie
+def get_user_report(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    try:
+        user = CustomUser.objects.get(id=pk)
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = int(pk)
+        project_id = request.GET.get("project")
+        order_start = date.today()
+        order_end = date.today()
+        if month or year or user_id or project_id:
+            if month == "all":
+                order_start = date(int(year), 1, 1)
+                order_end = date(int(year), 12, 31)
+            else:
+                order_start = date(int(year), int(month), 1)
+                if month == "12":
+                    last_month_day = date(int(year)+1, 1, 1) - order_start
+                else:
+                    last_month_day = date(int(year), int(month)+1, 1) - order_start
+                order_end = date(int(year), int(month), last_month_day.days)
+
+            logs = {"activity_logs":[]}
+            activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
+            for log in activity_logs:
+                project_name = log.project.project_name
+                logs["activity_logs"].append({
+                    'time_added':log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
+                    'username': log.user.username,
+                    'project': project_name,
+                    'activity':log.activity.activity_name,
+                    'department':log.user.department.dept_name,
+                    'date':log.date.strftime(f'%Y-%m-%d'),
+                    "hours_worked":Decimal(log.hours_worked),
+                    "details":log.details,
+                    
+                })
+
+            return JsonResponse(logs)
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)

@@ -23,6 +23,10 @@ urlpatterns = [
     path("leave-logs/", views.leave_log, name="leave_logs"),
     path("update-leave/<str:pk>", views.update_leave, name="update_leave"),
     path("delete-leave/<str:pk>", views.delete_leave, name="delete_leave"),
+    #REPORTS
+    path("report-user/<str:pk>", views.report_user, name="report_user"),
+
+    
 
     #AUTH
     path("password_reset/",
@@ -70,14 +74,16 @@ urlpatterns = [
 
     #MANAGER
     path("manager-overview/", views_manager.manager_overview, name="manager_overview"),
+
     #APIs
     path('api/get_calendar_data/', views_api.CalendarDataView.as_view(), name='get_calendar_data'),
     path('api/get_holiday_data/', views_api.get_holiday_data, name='get_holiday_data'),
     path('api/post_activity_data/', views_api.post_activity_data, name='post_activity_data'),
     path("api/overview_data/", views_api.overview_data, name="overview_data"),
     path("api/overview_manager_data/", views_api.overview_manager_data, name="overview_manager_data"),
-    path("api/overview_user_data/", views_api.overview_user_data, name="overview_user_data"),
+    path("api/overview_user_data/<str:pk>", views_api.overview_user_data, name="overview_user_data"),
     path('api/get_leave_data/', views_api.get_leave_data, name='get_leave_data'),
+    path('api/report/user/<str:pk>', views_api.get_user_report, name='get_user_report'),
 
     #PROFILE USERS
     path('profile/<str:pk>/', views.profile, name='profile'),

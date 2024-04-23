@@ -759,5 +759,24 @@ def upload_profile_image(request):
 
 
 def handler404(request, exception):
-    # You can add custom logic here if needed
     return render(request, 'project_manager/404.html', status=404)
+
+
+# REPORTS
+def report_user(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+
+    context = {
+        "projects" : projects,
+        "user" : user,
+    }
+    return render(request, "project_manager/reports/user_reports.html", context)
+
