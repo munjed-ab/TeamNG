@@ -87,29 +87,47 @@
     </a>
   </li>
 
-  <li class="nav-item {% if 'report' in request.path %}active{% endif %}">
+  <li class="nav-item">
     <a
       class="nav-link collapsed"
-      href="{% url 'report_user' request.user.id %}"
+      href="#"
+      data-toggle="collapse"
+      data-target="#collapseReportPages"
       aria-expanded="true"
-      aria-controls="collapseUtilities"
+      aria-controls="collapseReportPages"
     >
       <i class="fas fa-fw fa-table"></i>
-      <span>Report</span>
+      <span>Reports</span>
     </a>
     <div
-      id="collapseTwo"
+      id="collapseReportPages"
       class="collapse"
-      aria-labelledby="headingTwo"
+      aria-labelledby="headingPages"
       data-parent="#accordionSidebar"
     >
       <div class="bg-white py-2 collapse-inner rounded">
-        <a class="collapse-item" href="buttons.html">Projects</a>
-        <a class="collapse-item" href="cards.html">Staff</a>
+        <h6 class="collapse-header">Management:</h6>
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Activitys</a
+        >
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Projects</a
+        >
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Leaves</a
+        >
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Expected Hours</a
+        >
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Project/Activity Type</a
+        >
+        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+          >Projects Locations</a
+        >
       </div>
     </div>
   </li>
-
   <!-- Nav Item - Pages Collapse Menu -->
   {% if request.user.is_admin %}
   <li class="nav-item">

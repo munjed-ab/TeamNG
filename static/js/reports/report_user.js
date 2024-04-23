@@ -44,7 +44,7 @@ $(document).ready(function () {
         project: project,
       },
       success: function (response) {
-        updateProjectCards(response.activity_logs);
+        updateTable(response.activity_logs);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -52,7 +52,7 @@ $(document).ready(function () {
     });
   }
 
-  function updateProjectCards(response) {
+  function updateTable(response) {
     console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
