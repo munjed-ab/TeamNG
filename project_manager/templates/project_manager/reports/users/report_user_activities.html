@@ -82,5 +82,5 @@
 </div>
 {% endblock %} {% block js %} {{ block.super }}
 {{user.id|json_script:"user_id"}}
-<script src="{% static 'js/reports/report_user.js' %}"></script>
+<script src="{% static 'js/reports/users/report_user_activities.js' %}"></script>
 {% endblock %}

@@ -763,7 +763,7 @@ def handler404(request, exception):
 
 
 # REPORTS
-def report_user(request, pk):
+def report_user_activity(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
@@ -778,5 +778,55 @@ def report_user(request, pk):
         "projects" : projects,
         "user" : user,
     }
-    return render(request, "project_manager/reports/user_reports.html", context)
+    return render(request, "project_manager/reports/users/report_user_activities.html", context)
 
+def report_user_project(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+
+    context = {
+        "projects" : projects,
+        "user" : user,
+    }
+    return render(request, "project_manager/reports/users/report_user_project.html", context)
+
+
+def report_user_leave(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    user = CustomUser.objects.get(id=pk)
+
+    context = {
+        "user" : user,
+    }
+    return render(request, "project_manager/reports/users/report_user_leaves.html", context)
+
+
+def report_user_expectedhours(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+
+    context = {
+        "projects" : projects,
+        "user" : user,
+    }
+    return render(request, "project_manager/reports/users/report_user_expectedhours.html", context)

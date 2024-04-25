@@ -24,9 +24,10 @@ urlpatterns = [
     path("update-leave/<str:pk>", views.update_leave, name="update_leave"),
     path("delete-leave/<str:pk>", views.delete_leave, name="delete_leave"),
     #REPORTS
-    path("report-user/<str:pk>", views.report_user, name="report_user"),
-
-    
+    path("report-activity-user/<str:pk>", views.report_user_activity, name="report_user_activity"),
+    path("report-project-user/<str:pk>", views.report_user_project, name="report_user_project"),
+    path("report-leave-user/<str:pk>", views.report_user_leave, name="report_user_leave"),
+    path("report-expected-hours-user/<str:pk>", views.report_user_expectedhours, name="report_user_expectedhours"),
 
     #AUTH
     path("password_reset/",
@@ -83,9 +84,12 @@ urlpatterns = [
     path("api/overview_manager_data/", views_api.overview_manager_data, name="overview_manager_data"),
     path("api/overview_user_data/<str:pk>", views_api.overview_user_data, name="overview_user_data"),
     path('api/get_leave_data/', views_api.get_leave_data, name='get_leave_data'),
-    path('api/report/user/<str:pk>', views_api.get_user_report, name='get_user_report'),
-
-    #PROFILE USERS
+    path('api/report/activity/user/<str:pk>', views_api.get_user_activity_report, name='get_user_activity_report'),
+    path('api/report/project/user/<str:pk>', views_api.get_user_project_report, name='get_user_project_report'),
+    path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
+    path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
+    
+    #PROFILE USERS 
     path('profile/<str:pk>/', views.profile, name='profile'),
     path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
 ]

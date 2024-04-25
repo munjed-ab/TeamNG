@@ -32,11 +32,10 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
-    var user = user_id;
     var project = $("#project-filter").val();
 
     $.ajax({
-      url: `/api/report/user/${user_id}`,
+      url: `/api/report/activity/user/${user_id}`,
       method: "GET",
       data: {
         month: month,

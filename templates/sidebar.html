@@ -106,24 +106,31 @@
       data-parent="#accordionSidebar"
     >
       <div class="bg-white py-2 collapse-inner rounded">
-        <h6 class="collapse-header">Management:</h6>
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+        <h6 class="collapse-header">Reports:</h6>
+        <a
+          class="collapse-item"
+          href="{% url 'report_user_activity' request.user.id %}"
           >Activitys</a
         >
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+        <a
+          class="collapse-item"
+          href="{% url 'report_user_project' request.user.id%}"
           >Projects</a
         >
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+        <a
+          class="collapse-item"
+          href="{% url 'report_user_leave' request.user.id%}"
           >Leaves</a
         >
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+        <a
+          class="collapse-item"
+          href="{% url 'report_user_expectedhours' request.user.id%}"
           >Expected Hours</a
         >
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
+        <a
+          class="collapse-item"
+          href="{% url 'report_user_activity' request.user.id%}"
           >Project/Activity Type</a
-        >
-        <a class="collapse-item" href="{% url 'report_user' request.user.id%}"
-          >Projects Locations</a
         >
       </div>
     </div>
