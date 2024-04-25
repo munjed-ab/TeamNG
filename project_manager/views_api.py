@@ -337,7 +337,6 @@ def overview_data(request):
                 percent_complete = (total_worked_hours*100) / total_hours
 
             missed_hours = total_hours - total_worked_hours
-            # total hours : float
             filtered_data = {
                 "projects": [],
                 "activities": [],
@@ -375,8 +374,7 @@ def overview_data(request):
                     "activity_logs": data["activity_logs"]
                 }
                 filtered_data["activities"].append(activity_info)
-            
-            # Return the filtered data as JSON response
+
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
@@ -516,7 +514,6 @@ def overview_manager_data(request):
 
 
             missed_hours = total_hours - total_worked_hours
-            # total hours : float
             filtered_data = {
                 "projects": [],
                 "activities": [],
@@ -544,7 +541,6 @@ def overview_manager_data(request):
                 "name": "Leaves",
                 "total": hours_leave_days,
                 "percentage": hours_leave_days_percentage
-                # "activity_logs": []  # Assuming no activity logs for leave days
             })
 
             for activity_name, data in activity_type_data.items():
@@ -556,8 +552,7 @@ def overview_manager_data(request):
                 }
                 filtered_data["activities"].append(activity_info)
 
-            
-            # Return the filtered data as JSON response
+
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")

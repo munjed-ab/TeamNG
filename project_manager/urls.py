@@ -34,7 +34,7 @@ urlpatterns = [
         views_auth.PasswordResetView.as_view(
             template_name="project_manager/auth/password_reset.html",
             email_template_name='project_manager/auth/password_reset_email.html',
-            form_class=CustomPasswordResetForm),  # Specify the custom form here
+            form_class=CustomPasswordResetForm),
         name="password_reset"),
     path("password_reset_done/",
         views_auth.PasswordResetDoneView.as_view(template_name="project_manager/auth/password_reset_sent.html"),
@@ -88,7 +88,7 @@ urlpatterns = [
     path('api/report/project/user/<str:pk>', views_api.get_user_project_report, name='get_user_project_report'),
     path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
     path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
-    
+
     #PROFILE USERS 
     path('profile/<str:pk>/', views.profile, name='profile'),
     path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
