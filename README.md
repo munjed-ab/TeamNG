@@ -1,6 +1,6 @@
 # Employee Management System
 
-This Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and user profiles. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports (still under development) and resetting passwords via email confirmation.
+This Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and analysis overview. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports (still under development) and resetting passwords via email confirmation.
 
 ## Features
 
