@@ -28,6 +28,7 @@ urlpatterns = [
     path("report-project-user/<str:pk>", views.report_user_project, name="report_user_project"),
     path("report-leave-user/<str:pk>", views.report_user_leave, name="report_user_leave"),
     path("report-expected-hours-user/<str:pk>", views.report_user_expectedhours, name="report_user_expectedhours"),
+    path("report-pro-act-user/<str:pk>", views.report_user_pro_act, name="report_user_pro_act"),
 
     #AUTH
     path("password_reset/",
@@ -88,6 +89,7 @@ urlpatterns = [
     path('api/report/project/user/<str:pk>', views_api.get_user_project_report, name='get_user_project_report'),
     path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
     path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
+    path('api/report/project-for-activity/user/<str:pk>', views_api.get_user_pro_act_report, name='get_user_pro_act_report'),
 
     #PROFILE USERS 
     path('profile/<str:pk>/', views.profile, name='profile'),

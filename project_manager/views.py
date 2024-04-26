@@ -830,3 +830,18 @@ def report_user_expectedhours(request, pk):
         "user" : user,
     }
     return render(request, "project_manager/reports/users/report_user_expectedhours.html", context)
+
+def report_user_pro_act(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+
+    context = {
+        "user" : user,
+    }
+    return render(request, "project_manager/reports/users/report_user_pro_act.html", context)

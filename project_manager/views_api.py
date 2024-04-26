@@ -712,8 +712,7 @@ def overview_user_data(request, pk):
                 }
                 filtered_data["activities"].append(activity_info)
 
-            
-            # Return the filtered data as JSON response
+
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
@@ -907,7 +906,7 @@ def get_user_leave_report(request, pk):
     except Exception as e:
         messages.error(request, "Something went wrong")
         return JsonResponse({"error": str(e)}, status=500)
-    
+
 
 @ensure_csrf_cookie
 def get_user_overview_report(request, pk):
@@ -992,7 +991,6 @@ def get_user_overview_report(request, pk):
                 percent_complete = (total_worked_hours*100) / total_hours
 
             missed_hours = total_hours - total_worked_hours
-            # total hours : float
             filtered_data = {
                 "date_range":{"start":order_start.strftime(r"%d/%m/%Y"), "end":order_end.strftime(r"%d/%m/%Y")},
                 "projects": [],
@@ -1020,7 +1018,92 @@ def get_user_overview_report(request, pk):
                 "percentage": hours_leave_days_percentage
             })
 
-            # Return the filtered data as JSON response
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+    
+@ensure_csrf_cookie
+def get_user_pro_act_report(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = int(pk)
+        project_id = request.GET.get("project")
+
+        order_start = date.today()
+        order_end = date.today()
+        if month or year or user_id or project_id:
+            if month == "all":
+                order_start = date(int(year), 1, 1)
+                order_end = date(int(year), 12, 31)
+            else:
+                order_start = date(int(year), int(month), 1)
+                if month == "12":
+                    last_month_day = date(int(year) + 1, 1, 1) - order_start
+                else:
+                    last_month_day = date(int(year), int(month) + 1, 1) - order_start
+                order_end = date(int(year), int(month), last_month_day.days)
+
+            user = CustomUser.objects.get(id=user_id)
+            total_hours:int = 0
+            users_count = 1
+
+            filtered_dates_satge1 = get_filtered_dates(order_start.ctime(), order_end.ctime())
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            activity_logs = get_activity_logs(user_id, "all", order_start, order_end)
+
+            project_totals = defaultdict(float)
+            activity_totals = defaultdict(float)
+            project_activities = defaultdict(lambda: defaultdict(float))
+
+            _projects = Project.objects.all()
+            _activitys = Activity.objects.all()
+            for pro in _projects:
+                project_name = pro.project_name
+                project_totals[project_name] = 0
+                for act in _activitys:
+                    activity_name = act.activity_name
+                    activity_totals[activity_name] = 0
+                    project_activities[project_name][activity_name] = 0
+
+            for activity_log in activity_logs:
+                project_name = activity_log.project.project_name
+                activity_name = activity_log.activity.activity_name
+                hours_worked = activity_log.hours_worked
+
+                project_totals[project_name] += hours_worked
+                activity_totals[activity_name] += hours_worked
+
+                project_activities[project_name][activity_name] += hours_worked
+
+            # Calculate percentages
+            project_percentages = {project_name: (hours / total_hours) * 100 for project_name, hours in project_totals.items()}
+            activity_percentages = {activity_name: (hours / total_hours) * 100 for activity_name, hours in activity_totals.items()}
+
+            filtered_data = {"report": []}
+
+            # Append project and activity to filtered data
+            for project_name, activities in project_activities.items():
+                for activity_name, hours_worked in activities.items():
+                    project_info = {
+                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")

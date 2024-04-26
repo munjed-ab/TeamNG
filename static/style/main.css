@@ -169,7 +169,7 @@ body {
 .table-head-color {
   background-color: var(--primary);
   color: white;
-  border-radius: 10px;
+  width: 100px;
 }
 canvas {
   background-color: whitesmoke;

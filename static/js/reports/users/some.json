@@ -1,0 +1,459 @@
+{
+  "report": [
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": "1.00"
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEST",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": "2.50"
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": "11.00"
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "RGB",
+        "percentage": "0.5941901408450704225352112676"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": "2.00"
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "LLM",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": "2.00"
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "REACT",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": "3.00"
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "TEA",
+        "percentage": "0.1320422535211267605633802817"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": { "name": "AAS", "percentage": 0.0 },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "QA",
+        "percentage": "0.1980633802816901408450704225"
+      },
+      "hours_worked": "1.00"
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "DESIGN",
+        "percentage": "0.08802816901408450704225352113"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "CODING",
+        "percentage": "0.2200704225352112676056338028"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": {
+        "name": "TESTING",
+        "percentage": "0.4841549295774647887323943662"
+      },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "DOCUMENTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "VETTING", "percentage": 0.0 },
+      "hours_worked": 0
+    },
+    {
+      "project": {
+        "name": "ML",
+        "percentage": "0.04401408450704225352112676056"
+      },
+      "activity": { "name": "MEETING", "percentage": 0.0 },
+      "hours_worked": 0
+    }
+  ]
+}
