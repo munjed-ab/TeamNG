@@ -28,7 +28,7 @@ urlpatterns = [
     path("report-project-user/<str:pk>", views.report_user_project, name="report_user_project"),
     path("report-leave-user/<str:pk>", views.report_user_leave, name="report_user_leave"),
     path("report-expected-hours-user/<str:pk>", views.report_user_expectedhours, name="report_user_expectedhours"),
-    path("report-pro-act-user/<str:pk>", views.report_user_pro_act, name="report_user_pro_act"),
+    path("report-project-activity-user/<str:pk>", views.report_user_pro_act, name="report_user_pro_act"),
 
     #AUTH
     path("password_reset/",
@@ -76,6 +76,11 @@ urlpatterns = [
 
     #MANAGER
     path("manager-overview/", views_manager.manager_overview, name="manager_overview"),
+    path("report-manager-activities/<str:pk>", views_manager.report_manager_act, name="report_manager_act"),
+    path("report-manager-projects/<str:pk>", views_manager.report_manager_pro, name="report_manager_pro"),
+    path("report-manager-leaves/<str:pk>", views_manager.report_manager_leave, name="report_manager_leave"),
+    path("report-manager-overview/<str:pk>", views_manager.report_manager_overview, name="report_manager_overview"),
+    path("report-project-activity-manager/<str:pk>", views_manager.report_manager_pro_act, name="report_manager_pro_act"),
 
     #APIs
     path('api/get_calendar_data/', views_api.CalendarDataView.as_view(), name='get_calendar_data'),
@@ -90,6 +95,11 @@ urlpatterns = [
     path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
     path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
     path('api/report/project-for-activity/user/<str:pk>', views_api.get_user_pro_act_report, name='get_user_pro_act_report'),
+    path('api/report/activity/manager/<str:pk>', views_api.get_manager_activities, name='get_manager_activities'),
+    path('api/report/project/manager/<str:pk>', views_api.get_manager_project_report, name='get_manager_project_report'),
+    path('api/report/leave/manager/<str:pk>', views_api.get_manager_leave_report, name='get_manager_leave_report'),
+    path('api/report/expected_hours/manager/<str:pk>', views_api.get_manager_overview_report, name='get_manager_overview_report'),
+    path('api/report/project-for-activity/manager/<str:pk>', views_api.get_manager_pro_act_report, name='get_manager_pro_act_report'),
 
     #PROFILE USERS 
     path('profile/<str:pk>/', views.profile, name='profile'),

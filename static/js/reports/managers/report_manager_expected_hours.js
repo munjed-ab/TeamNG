@@ -33,14 +33,16 @@ $(document).ready(function () {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
     var project = $("#project-filter").val();
+    var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/api/report/expectedhours/user/${user_id}`,
+      url: `/api/report/expected_hours/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
         project: project,
+        user: user,
       },
       success: function (response) {
         updateTable(response);
@@ -112,18 +114,13 @@ $(document).ready(function () {
     $("<td>")
       .text(`${parseFloat(response.all.percent_complete).toFixed(2)}%`)
       .appendTo(row6);
-
-    // // Attach downloadExcel function to the download button click event
-    // $("#downloadExcelBtn").click(function () {
-    //   downloadExcel(activityLogs, name);
-    // });
-
-    // $("#activityLogsModal").modal("show");
   }
 
-  $("#month-filter, #year-filter, #project-filter").change(function () {
-    handleFilterChange();
-  });
+  $("#month-filter, #year-filter, #project-filter, #user-filter").change(
+    function () {
+      handleFilterChange();
+    }
+  );
 
   handleFilterChange(); // Initial call to load data
 });

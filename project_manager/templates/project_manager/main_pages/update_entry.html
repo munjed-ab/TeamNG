@@ -6,7 +6,7 @@
 />
 
 <div class="container-fluid">
-  <div class="container mt-5">
+  <div class="container-update-register mt-5">
     <h2>Update Activity</h2>
     <form id="updateactivity" action="" method="POST">
       {% csrf_token %}
@@ -87,7 +87,16 @@
           value="{{old_entry.hours_worked|floatformat}}"
         />
       </div>
-      <button id="submit" type="submit" class="btn btn-primary">Update</button>
+      <div class="submit-update-btn">
+        <button
+          id="submit"
+          type="submit"
+          class="btn btn-primary"
+          style="background-color: var(--primary)"
+        >
+          Update
+        </button>
+      </div>
     </form>
   </div>
 </div>

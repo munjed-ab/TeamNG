@@ -1,6 +1,6 @@
 from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import CustomUser, Project_Activity, ActivityLogs
+from .models import CustomUser, ActivityLogs
 from django import forms
 from .models import CustomUser, Project, Activity, Department, Location, Holiday, Profile
 from django.core.exceptions import ValidationError

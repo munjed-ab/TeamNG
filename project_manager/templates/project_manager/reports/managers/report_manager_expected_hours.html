@@ -36,8 +36,27 @@
         <option value="2025">2026</option>
       </select>
     </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="project-filter">Project:</label>
+      <select id="project-filter" class="form-control">
+        <option value="all">All Projects</option>
+        {% for project in projects %}
+        <option value="{{project.id}}">{{project.project_name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="user-filter">User:</label>
+      <select id="user-filter" class="form-control">
+        <option value="all">All Users</option>
+        {% for user in users %}
+        <option value="{{user.id}}">{{user.username}}</option>
+        {% endfor %}
+        <!-- Add options dynamically using AJAX if needed -->
+      </select>
+    </div>
   </div>
-  <h2 class="float-left">Project/Actvity</h2>
+  <h2 class="float-left">Expected Hours</h2>
   <h2 class="float-right">
     <a href="#">
       <i
@@ -48,77 +67,22 @@
       </i
     ></a>
   </h2>
+
   <div class="table-responsive">
     <table class="table table-striped">
-      <thead class="table-head-color" id="head">
+      <thead class="table-head-color">
         <tr>
+          <th id="date-range"></th>
           <th></th>
-          <th>projectA</th>
-          <th>projectB</th>
-          <th>projectC</th>
-          <th>projectD</th>
-          <th>projectE</th>
-          <th>projectF</th>
-          <th>total percentage</th>
         </tr>
       </thead>
       <tbody id="logs-table">
         <!--LOGS CONTENT HERE-->
-        <tr></tr>
-        <tr>
-          <th class="table-head-color">ActivityA</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityB</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityC</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityD</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">total percentage</th>
-          <td>10%</td>
-          <td>20%</td>
-          <td>1%</td>
-          <td>5%</td>
-          <td>8%</td>
-          <td>9%</td>
-        </tr>
       </tbody>
     </table>
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
 {{user.id|json_script:"user_id"}}
-<script src="{% static 'js/reports/users/report_user_project_for_activity.js' %}"></script>
+<script src="{% static 'js/reports/managers/report_manager_expected_hours.js' %}"></script>
 {% endblock %}

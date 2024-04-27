@@ -166,6 +166,21 @@ body {
   border-left: 0.25rem solid #5a5c69 !important;
 }
 
+.container-update-register,
+.container-update-leave {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column; /* Ensures items stack vertically */
+  height: 90vh; /* Adjust as needed */
+}
+.submit-update-btn {
+  margin: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .table-head-color {
   background-color: var(--primary);
   color: white;

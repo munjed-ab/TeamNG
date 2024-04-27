@@ -32,13 +32,15 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
+    var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/api/report/project-for-activity/user/${user_id}`,
+      url: `/api/report/project-for-activity/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
+        user: user,
       },
       success: function (response) {
         updateTable(response.report);
@@ -54,8 +56,6 @@ $(document).ready(function () {
     logs_table_body.empty();
     var header_table = $("#head");
     header_table.empty();
-    // TODO: render the table
-    // Create table headers
 
     // Populate table with activity logs
     let projects = [];
@@ -104,9 +104,11 @@ $(document).ready(function () {
     }
   }
 
-  $("#month-filter, #year-filter, #project-filter").change(function () {
-    handleFilterChange();
-  });
+  $("#month-filter, #year-filter, #project-filter, #user-filter").change(
+    function () {
+      handleFilterChange();
+    }
+  );
 
   handleFilterChange(); // Initial call to load data
 });

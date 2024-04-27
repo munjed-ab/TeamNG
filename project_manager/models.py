@@ -110,23 +110,6 @@ class Project(models.Model):
     def __str__(self):
         return str(self.project_name)
 
-class Project_Activity(models.Model):
-    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    hours = models.DecimalField(max_digits=5, decimal_places=2, default = 0)
-    date = models.DateField()
-
-    def __str__(self):
-        return str(self.project)+": "+str(self.activity)
-
-# class TimeEntry(models.Model):
-#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     project_activity = models.ForeignKey(Project_Activity, on_delete=models.CASCADE)
-#     hours_worked = models.DecimalField(max_digits=5, decimal_places=2)
-#     date = models.DateField()
-#     created = models.DateTimeField(auto_now_add=True)
-#     updated = models.DateTimeField(auto_now=True)
-#     details = models.TextField(null=True)
 
 class Leave(models.Model):
     from_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='leaves_sent', null=True)
@@ -168,8 +151,9 @@ class ActivityLogs(models.Model):
     hours_worked = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    #set to blank=True in production
     details = models.TextField(null=True)
-    
+
     class Meta:
         ordering = ["-updated", "-created"]
 

@@ -21,7 +21,7 @@
 </style>
 
 <div class="container-fluid">
-  <div class="container mt-5">
+  <div class="container-update-leave mt-5">
     <h2>Update Leave</h2>
     <form id="addleave" action="" method="POST">
       {% csrf_token %} {% if request.user.is_superuser %}
@@ -138,9 +138,16 @@
         </div>
       </div>
 
-      <button id="submitBtn" type="submit" class="btn btn-primary">
-        Add Leave
-      </button>
+      <div class="submit-update-btn">
+        <button
+          id="submit"
+          type="submit"
+          class="btn btn-primary"
+          style="background-color: var(--primary)"
+        >
+          Update
+        </button>
+      </div>
     </form>
   </div>
 </div>

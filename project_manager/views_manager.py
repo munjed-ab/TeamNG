@@ -35,3 +35,119 @@ def manager_overview(request):
         "loc_name":loc_name
     }
     return render(request, "project_manager/manager/analysis_overview/overview_manager.html", context)
+
+def report_manager_act(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+    users = CustomUser.objects.filter(
+        is_superuser=False,
+        is_admin=False,
+        location=user.location.id,
+        department=user.department.id
+    )
+
+    context = {
+        "user" : user,
+        "projects" : projects,
+        "users" : users
+    }
+    return render(request, "project_manager/reports/managers/report_manager_activities.html", context)
+
+def report_manager_pro(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+    users = CustomUser.objects.filter(
+        is_superuser=False,
+        is_admin=False,
+        location=user.location.id,
+        department=user.department.id
+    )
+
+    context = {
+        "user" : user,
+        "projects" : projects,
+        "users" : users
+    }
+    return render(request, "project_manager/reports/managers/report_manager_projects.html", context)
+
+def report_manager_leave(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser=False,
+        is_admin=False,
+        location=user.location.id,
+        department=user.department.id
+    )
+
+    context = {
+        "user" : user,
+        "users" : users
+    }
+    return render(request, "project_manager/reports/managers/report_manager_leaves.html", context)
+
+def report_manager_overview(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    projects = Project.objects.all()
+    users = CustomUser.objects.filter(
+        is_superuser=False,
+        is_admin=False,
+        location=user.location.id,
+        department=user.department.id
+    )
+
+    context = {
+        "user" : user,
+        "projects" : projects,
+        "users" : users
+    }
+    return render(request, "project_manager/reports/managers/report_manager_expected_hours.html", context)
+
+def report_manager_pro_act(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser=False,
+        is_admin=False,
+        location=user.location.id,
+        department=user.department.id
+    )
+
+    context = {
+        "user" : user,
+        "users":users,
+    }
+    return render(request, "project_manager/reports/managers/report_manager_pro_act.html", context)
