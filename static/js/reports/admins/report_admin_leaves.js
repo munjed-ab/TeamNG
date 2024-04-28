@@ -32,20 +32,20 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
-    var project = $("#project-filter").val();
     var user = $("#user-filter").val();
+    var department = $("#department-filter").val();
 
     $.ajax({
-      url: `/api/report/project/manager/${user_id}`,
+      url: `/api/report/leave/admin/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
-        project: project,
         user: user,
+        department: department,
       },
       success: function (response) {
-        updateTable(response.projects);
+        updateTable(response.leaves);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -61,24 +61,32 @@ $(document).ready(function () {
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>").text(log.project).appendTo(row);
-      $("<td>").text(log.department).appendTo(row);
-      $("<td>").text(log.location).appendTo(row);
-      $("<td>")
-        .text(
-          new Intl.NumberFormat().format(
-            parseFloat(log.worked_hours).toFixed(2)
-          )
-        )
-        .appendTo(row);
+      $("<td>").text(log.from).appendTo(row);
+      $("<td>").text(log.to).appendTo(row);
+      $("<td>").text(log.start_date).appendTo(row);
+
+      $("<td>").text(log.end_date).appendTo(row);
+      $("<td>").text(log.days).appendTo(row);
+      $("<td>").text(log.actual_days).appendTo(row);
+      $("<td>").text(log.type).appendTo(row);
+      $("<td>").text(log.respond).appendTo(row);
     });
   }
 
-  $("#month-filter, #year-filter, #project-filter, #user-filter").change(
-    function () {
-      handleFilterChange();
+  $(
+    "#month-filter, #year-filter, #user-filter, #department-filter, #project-filter"
+  ).change(function () {
+    var selectedFilter = $(this).attr("id");
+
+    if (selectedFilter === "user-filter") {
+      // Reset department filter to "all"
+      $("#department-filter").val("all");
+    } else if (selectedFilter === "department-filter") {
+      // Reset user filter to "all"
+      $("#user-filter").val("all");
     }
-  );
+    handleFilterChange();
+  });
   document
     .getElementById("downloadExcelBtn")
     .addEventListener("click", function () {

@@ -43,7 +43,11 @@ def report_manager_act(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-
+    elif not request.user.is_manager:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
     users = CustomUser.objects.filter(
@@ -67,7 +71,11 @@ def report_manager_pro(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-
+    elif not request.user.is_manager:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
     users = CustomUser.objects.filter(
@@ -91,7 +99,11 @@ def report_manager_leave(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-
+    elif not request.user.is_manager:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
     user = CustomUser.objects.get(id=pk)
     users = CustomUser.objects.filter(
         is_superuser=False,
@@ -113,7 +125,11 @@ def report_manager_overview(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-
+    elif not request.user.is_manager:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
     users = CustomUser.objects.filter(
@@ -137,7 +153,11 @@ def report_manager_pro_act(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-
+    elif not request.user.is_manager:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
     user = CustomUser.objects.get(id=pk)
     users = CustomUser.objects.filter(
         is_superuser=False,

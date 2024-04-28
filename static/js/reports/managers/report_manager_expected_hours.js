@@ -71,41 +71,60 @@ $(document).ready(function () {
         .text(`${parseFloat(project.percentage).toFixed(2)}%`)
         .appendTo(row);
     });
-
     var row1 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "RGB(99, 136, 199)", color: "white" });
     $("<td>").text("expected hours").appendTo(row1);
     $("<td>")
-      .text(parseFloat(response.all.expected_hours).toFixed(2))
+      .text(
+        new Intl.NumberFormat().format(
+          parseFloat(response.all.expected_hours).toFixed(2)
+        )
+      )
       .appendTo(row1);
     var row2 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--success)", color: "white" });
     $("<td>").text("worked hours").appendTo(row2);
     $("<td>")
-      .text(parseFloat(response.all.total_worked_hours).toFixed(2))
+      .text(
+        new Intl.NumberFormat().format(
+          parseFloat(response.all.total_worked_hours).toFixed(2)
+        )
+      )
       .appendTo(row2);
     var row3 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--danger)", color: "white" });
     $("<td>").text("missed hours").appendTo(row3);
     $("<td>")
-      .text(parseFloat(response.all.missed_hours).toFixed(2))
+      .text(
+        new Intl.NumberFormat().format(
+          parseFloat(response.all.missed_hours).toFixed(2)
+        )
+      )
       .appendTo(row3);
     var row4 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--blue)", color: "white" });
     $("<td>").text("public holiday hours").appendTo(row4);
     $("<td>")
-      .text(parseFloat(response.all.hours_pub_holiday).toFixed(2))
+      .text(
+        new Intl.NumberFormat().format(
+          parseFloat(response.all.hours_pub_holiday).toFixed(2)
+        )
+      )
       .appendTo(row4);
     var row5 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--dark)", color: "white" });
     $("<td>").text("leave days hours").appendTo(row5);
     $("<td>")
-      .text(parseFloat(response.all.hours_leave_days).toFixed(2))
+      .text(
+        new Intl.NumberFormat().format(
+          parseFloat(response.all.hours_leave_days).toFixed(2)
+        )
+      )
       .appendTo(row5);
     var row6 = $("<tr>")
       .appendTo(logs_table_body)
@@ -121,6 +140,22 @@ $(document).ready(function () {
       handleFilterChange();
     }
   );
+  document
+    .getElementById("downloadExcelBtn")
+    .addEventListener("click", function () {
+      /* Create worksheet from HTML DOM TABLE */
+      var wb = XLSX.utils.table_to_book(
+        document.getElementById("TableToExport")
+      );
 
+      // Process Data (add a new row)
+      var ws = wb.Sheets["Sheet1"];
+      XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
+        origin: -1,
+      });
+
+      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
+      XLSX.writeFile(wb, "Report.xlsb");
+    });
   handleFilterChange(); // Initial call to load data
 });

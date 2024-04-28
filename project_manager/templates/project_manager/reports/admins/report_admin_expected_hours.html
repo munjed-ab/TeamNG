@@ -55,8 +55,18 @@
         <!-- Add options dynamically using AJAX if needed -->
       </select>
     </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="department-filter">Department:</label>
+      <select id="department-filter" class="form-control">
+        <option value="all">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{dept.id}}">{{dept.dept_name}}</option>
+        {% endfor %}
+        <!-- Add options dynamically using AJAX if needed -->
+      </select>
+    </div>
   </div>
-  <h2 class="float-left">Project</h2>
+  <h2 class="float-left">Expected Hours</h2>
   <h2 class="float-right">
     <a href="#">
       <i
@@ -67,14 +77,13 @@
       </i
     ></a>
   </h2>
+
   <div class="table-responsive">
     <table id="TableToExport" class="table table-striped">
       <thead class="table-head-color">
         <tr>
-          <th>project</th>
-          <th>department</th>
-          <th>location</th>
-          <th>hours worked</th>
+          <th id="date-range"></th>
+          <th></th>
         </tr>
       </thead>
       <tbody id="logs-table">
@@ -86,5 +95,5 @@
 {% endblock %} {% block js %} {{ block.super }}
 {{user.id|json_script:"user_id"}}
 <script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
-<script src="{% static 'js/reports/managers/report_manager_projects.js' %}"></script>
+<script src="{% static 'js/reports/admins/report_admin_expected_hours.js' %}"></script>
 {% endblock %}

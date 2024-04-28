@@ -78,6 +78,22 @@ $(document).ready(function () {
       handleFilterChange();
     }
   );
+  document
+    .getElementById("downloadExcelBtn")
+    .addEventListener("click", function () {
+      /* Create worksheet from HTML DOM TABLE */
+      var wb = XLSX.utils.table_to_book(
+        document.getElementById("TableToExport")
+      );
 
+      // Process Data (add a new row)
+      var ws = wb.Sheets["Sheet1"];
+      XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
+        origin: -1,
+      });
+
+      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
+      XLSX.writeFile(wb, "Report.xlsb");
+    });
   handleFilterChange(); // Initial call to load data
 });

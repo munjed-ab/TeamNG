@@ -32,13 +32,17 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
+    var user = $("#user-filter").val();
+    var department = $("#department-filter").val();
 
     $.ajax({
-      url: `/api/report/project-for-activity/user/${user_id}`,
+      url: `/api/report/project-for-activity/admin/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
+        user: user,
+        department: department,
       },
       success: function (response) {
         updateTable(response.report);
@@ -54,8 +58,6 @@ $(document).ready(function () {
     logs_table_body.empty();
     var header_table = $("#head");
     header_table.empty();
-    // TODO: render the table
-    // Create table headers
 
     // Populate table with activity logs
     let projects = [];
@@ -104,7 +106,18 @@ $(document).ready(function () {
     }
   }
 
-  $("#month-filter, #year-filter, #project-filter").change(function () {
+  $(
+    "#month-filter, #year-filter, #project-filter, #user-filter, #department-filter"
+  ).change(function () {
+    var selectedFilter = $(this).attr("id");
+
+    if (selectedFilter === "user-filter") {
+      // Reset department filter to "all"
+      $("#department-filter").val("all");
+    } else if (selectedFilter === "department-filter") {
+      // Reset user filter to "all"
+      $("#user-filter").val("all");
+    }
     handleFilterChange();
   });
   document

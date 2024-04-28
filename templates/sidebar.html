@@ -134,7 +134,35 @@
           >Project/Activity Type</a
         >
       </div>
-
+      {% elif request.user.is_admin %}
+      <div class="bg-white py-2 collapse-inner rounded">
+        <h6 class="collapse-header">Reports:</h6>
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_act' request.user.id %}"
+          >Activitys</a
+        >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_pro' request.user.id %}"
+          >Projects</a
+        >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_leave' request.user.id %}"
+          >Leaves</a
+        >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_overview' request.user.id %}"
+          >Expected Hours</a
+        >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_pro_act' request.user.id %}"
+          >Project/Activity Type</a
+        >
+      </div>
       {% else %}
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Reports:</h6>

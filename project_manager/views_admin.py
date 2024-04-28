@@ -513,7 +513,7 @@ def overview(request):
         return redirect("login")
     if not request.user.ov:
         redirect("dashboard")
-
+    
     users = CustomUser.objects.filter(
         is_superuser = False
     ).order_by("username")
@@ -526,3 +526,143 @@ def overview(request):
         "projects" : projects
     }
     return render(request, "project_manager/admin_control/analysis_overview/overview.html", context)
+
+
+def report_admin_act(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser = False
+    ).order_by("username")
+    departments = Department.objects.all()
+    projects = Project.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+        "projects" : projects
+    }
+    return render(request, "project_manager/reports/admins/report_admin_activities.html", context)
+
+def report_admin_pro(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser = False
+    ).order_by("username")
+    departments = Department.objects.all()
+    projects = Project.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+        "projects" : projects
+    }
+    return render(request, "project_manager/reports/admins/report_admin_projects.html", context)
+
+
+def report_admin_leave(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser = False
+    ).order_by("username")
+    departments = Department.objects.all()
+    projects = Project.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+        "projects" : projects
+    }
+    return render(request, "project_manager/reports/admins/report_admin_leaves.html", context)
+
+
+def report_admin_overview(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser = False
+    ).order_by("username")
+    departments = Department.objects.all()
+    projects = Project.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+        "projects" : projects
+    }
+    return render(request, "project_manager/reports/admins/report_admin_expected_hours.html", context)
+
+
+
+def report_admin_pro_act(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    users = CustomUser.objects.filter(
+        is_superuser = False
+    ).order_by("username")
+    departments = Department.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+    }
+    return render(request, "project_manager/reports/admins/report_admin_pro_act.html", context)
+
+

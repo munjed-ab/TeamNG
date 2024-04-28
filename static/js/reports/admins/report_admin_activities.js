@@ -33,17 +33,21 @@ $(document).ready(function () {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
     var project = $("#project-filter").val();
+    var user = $("#user-filter").val();
+    var department = $("#department-filter").val();
 
     $.ajax({
-      url: `/api/report/expectedhours/user/${user_id}`,
+      url: `/api/report/activity/admin/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
         project: project,
+        user: user,
+        department: department,
       },
       success: function (response) {
-        updateTable(response);
+        updateTable(response.activity_logs);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -52,69 +56,37 @@ $(document).ready(function () {
   }
 
   function updateTable(response) {
-    var head_date = $("#date-range");
-    head_date.empty();
-    head_date.html(
-      `Interval From ${response.date_range.start} to ${response.date_range.end}`
-    );
+    console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
 
     // Populate table with activity logs
-
-    response.projects.forEach((project) => {
+    response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>").text(project.name).appendTo(row);
-      $("<td>")
-        .text(`${parseFloat(project.percentage).toFixed(2)}%`)
-        .appendTo(row);
-    });
+      $("<td>").text(log.time_added).appendTo(row);
+      $("<td>").text(log.username).appendTo(row);
+      $("<td>").text(log.project).appendTo(row);
 
-    var row1 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "RGB(99, 136, 199)", color: "white" });
-    $("<td>").text("expected hours").appendTo(row1);
-    $("<td>")
-      .text(parseFloat(response.all.expected_hours).toFixed(2))
-      .appendTo(row1);
-    var row2 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "var(--success)", color: "white" });
-    $("<td>").text("worked hours").appendTo(row2);
-    $("<td>")
-      .text(parseFloat(response.all.total_worked_hours).toFixed(2))
-      .appendTo(row2);
-    var row3 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "var(--danger)", color: "white" });
-    $("<td>").text("missed hours").appendTo(row3);
-    $("<td>")
-      .text(parseFloat(response.all.missed_hours).toFixed(2))
-      .appendTo(row3);
-    var row4 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "var(--blue)", color: "white" });
-    $("<td>").text("public holiday hours").appendTo(row4);
-    $("<td>")
-      .text(parseFloat(response.all.hours_pub_holiday).toFixed(2))
-      .appendTo(row4);
-    var row5 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "var(--dark)", color: "white" });
-    $("<td>").text("leave days hours").appendTo(row5);
-    $("<td>")
-      .text(parseFloat(response.all.hours_leave_days).toFixed(2))
-      .appendTo(row5);
-    var row6 = $("<tr>")
-      .appendTo(logs_table_body)
-      .css({ "background-color": "var(--info)", color: "white" });
-    $("<td>").text("percent complete").appendTo(row6);
-    $("<td>")
-      .text(`${parseFloat(response.all.percent_complete).toFixed(2)}%`)
-      .appendTo(row6);
+      $("<td>").text(log.activity).appendTo(row);
+      $("<td>").text(log.department).appendTo(row);
+      $("<td>").text(log.date).appendTo(row);
+      $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
+      $("<td>").text(log.details).appendTo(row);
+    });
   }
 
-  $("#month-filter, #year-filter, #project-filter").change(function () {
+  $(
+    "#month-filter, #year-filter, #user-filter, #department-filter, #project-filter"
+  ).change(function () {
+    var selectedFilter = $(this).attr("id");
+
+    if (selectedFilter === "user-filter") {
+      // Reset department filter to "all"
+      $("#department-filter").val("all");
+    } else if (selectedFilter === "department-filter") {
+      // Reset user filter to "all"
+      $("#user-filter").val("all");
+    }
     handleFilterChange();
   });
   document

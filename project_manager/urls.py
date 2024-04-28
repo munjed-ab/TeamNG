@@ -23,7 +23,9 @@ urlpatterns = [
     path("leave-logs/", views.leave_log, name="leave_logs"),
     path("update-leave/<str:pk>", views.update_leave, name="update_leave"),
     path("delete-leave/<str:pk>", views.delete_leave, name="delete_leave"),
-    #REPORTS
+    path('profile/<str:pk>/', views.profile, name='profile'),
+    path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
+    #USER REPORTS
     path("report-activity-user/<str:pk>", views.report_user_activity, name="report_user_activity"),
     path("report-project-user/<str:pk>", views.report_user_project, name="report_user_project"),
     path("report-leave-user/<str:pk>", views.report_user_leave, name="report_user_leave"),
@@ -74,8 +76,16 @@ urlpatterns = [
 
     path("analysis-overview/", views_admin.overview, name="overview"),
 
+    #ADMIN REPORTS
+    path("report-admin-activities/<str:pk>", views_admin.report_admin_act, name="report_admin_act"),
+    path("report-admin-projects/<str:pk>", views_admin.report_admin_pro, name="report_admin_pro"),
+    path("report-admin-leaves/<str:pk>", views_admin.report_admin_leave, name="report_admin_leave"),
+    path("report-admin-overview/<str:pk>", views_admin.report_admin_overview, name="report_admin_overview"),
+    path("report-project-activity-admin/<str:pk>", views_admin.report_admin_pro_act, name="report_admin_pro_act"),
+
     #MANAGER
     path("manager-overview/", views_manager.manager_overview, name="manager_overview"),
+    #MANAGER REPORTS
     path("report-manager-activities/<str:pk>", views_manager.report_manager_act, name="report_manager_act"),
     path("report-manager-projects/<str:pk>", views_manager.report_manager_pro, name="report_manager_pro"),
     path("report-manager-leaves/<str:pk>", views_manager.report_manager_leave, name="report_manager_leave"),
@@ -90,21 +100,25 @@ urlpatterns = [
     path("api/overview_manager_data/", views_api.overview_manager_data, name="overview_manager_data"),
     path("api/overview_user_data/<str:pk>", views_api.overview_user_data, name="overview_user_data"),
     path('api/get_leave_data/', views_api.get_leave_data, name='get_leave_data'),
+    #USER REPORT APIs
     path('api/report/activity/user/<str:pk>', views_api.get_user_activity_report, name='get_user_activity_report'),
     path('api/report/project/user/<str:pk>', views_api.get_user_project_report, name='get_user_project_report'),
     path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
     path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
     path('api/report/project-for-activity/user/<str:pk>', views_api.get_user_pro_act_report, name='get_user_pro_act_report'),
+    #MANAGER REPORT APIs
     path('api/report/activity/manager/<str:pk>', views_api.get_manager_activities, name='get_manager_activities'),
     path('api/report/project/manager/<str:pk>', views_api.get_manager_project_report, name='get_manager_project_report'),
     path('api/report/leave/manager/<str:pk>', views_api.get_manager_leave_report, name='get_manager_leave_report'),
     path('api/report/expected_hours/manager/<str:pk>', views_api.get_manager_overview_report, name='get_manager_overview_report'),
     path('api/report/project-for-activity/manager/<str:pk>', views_api.get_manager_pro_act_report, name='get_manager_pro_act_report'),
+    #ADMIN REPORT APIs
+    path('api/report/activity/admin/<str:pk>', views_api.get_admin_activities, name='get_admin_activities'),
+    path('api/report/project/admin/<str:pk>', views_api.get_admin_project_report, name='get_admin_project_report'),
+    path('api/report/leave/admin/<str:pk>', views_api.get_admin_leave_report, name='get_admin_leave_report'),
+    path('api/report/expected_hours/admin/<str:pk>', views_api.get_admin_overview_report, name='get_admin_overview_report'),
+    path('api/report/project-for-activity/admin/<str:pk>', views_api.get_admin_pro_act_report, name='get_admin_pro_act_report'),
 
-    #PROFILE USERS 
-    path('profile/<str:pk>/', views.profile, name='profile'),
-    path('upload-profile-image/', views.upload_profile_image, name='upload_profile_image'),
 ]
-
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

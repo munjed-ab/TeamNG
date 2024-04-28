@@ -49,76 +49,16 @@
     ></a>
   </h2>
   <div class="table-responsive">
-    <table class="table table-striped">
-      <thead class="table-head-color" id="head">
-        <tr>
-          <th></th>
-          <th>projectA</th>
-          <th>projectB</th>
-          <th>projectC</th>
-          <th>projectD</th>
-          <th>projectE</th>
-          <th>projectF</th>
-          <th>total percentage</th>
-        </tr>
-      </thead>
+    <table id="TableToExport" class="table table-striped">
+      <thead class="table-head-color" id="head"></thead>
       <tbody id="logs-table">
         <!--LOGS CONTENT HERE-->
-        <tr></tr>
-        <tr>
-          <th class="table-head-color">ActivityA</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityB</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityC</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">ActivityD</th>
-          <td>1</td>
-          <td>2</td>
-          <td>3</td>
-          <td>4</td>
-          <td>5</td>
-          <td>6</td>
-          <td>6%</td>
-        </tr>
-        <tr>
-          <th class="table-head-color">total percentage</th>
-          <td>10%</td>
-          <td>20%</td>
-          <td>1%</td>
-          <td>5%</td>
-          <td>8%</td>
-          <td>9%</td>
-        </tr>
       </tbody>
     </table>
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
 {{user.id|json_script:"user_id"}}
+<script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
 <script src="{% static 'js/reports/users/report_user_project_for_activity.js' %}"></script>
 {% endblock %}
