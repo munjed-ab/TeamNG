@@ -61,9 +61,9 @@ $(document).ready(function () {
       var row = $("<tr>").appendTo(logs_table_body);
       $("<td>").text(log.from).appendTo(row);
       $("<td>").text(log.to).appendTo(row);
-      $("<td>").text(log.start_date).appendTo(row);
+      $("<td>").text(new Date(log.start_date).toDateString()).appendTo(row);
 
-      $("<td>").text(log.end_date).appendTo(row);
+      $("<td>").text(new Date(log.end_date).toDateString()).appendTo(row);
       $("<td>").text(log.days).appendTo(row);
       $("<td>").text(log.actual_days).appendTo(row);
       $("<td>").text(log.type).appendTo(row);
@@ -89,9 +89,34 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      ws["!cols"] = [
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+      ];
+      ws["!rows"] = [{ hpx: 30 }];
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
 
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+      if (user == "all") {
+        user = "all";
+      } else {
+        user = $("#user-filter option:selected").text();
+      }
+
+      XLSX.writeFile(wb, `leaves_report_in_${year}_${month}_of_${user}.xlsb`);
     });
   handleFilterChange(); // Initial call to load data
 });

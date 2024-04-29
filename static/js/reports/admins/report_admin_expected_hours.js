@@ -1,4 +1,11 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
+
+const projects_count = JSON.parse(
+  document.getElementById("projects_count").textContent
+);
+
+var startDate = "";
+var endDate = "";
 $.ajaxSetup({
   beforeSend: function (xhr, settings) {
     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -58,6 +65,8 @@ $(document).ready(function () {
   function updateTable(response) {
     var head_date = $("#date-range");
     head_date.empty();
+    startDate = response.date_range.start;
+    endDate = response.date_range.end;
     head_date.html(
       `Interval From ${response.date_range.start} to ${response.date_range.end}`
     );
@@ -160,14 +169,58 @@ $(document).ready(function () {
         document.getElementById("TableToExport")
       );
 
-      // Process Data (add a new row)
       var ws = wb.Sheets["Sheet1"];
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
-      ws["B4"].z = "0.00%";
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+
+      var project = $("#project-filter").val();
+      if (project == "all") {
+        for (let i = 2; i < projects_count + 3; i++) {
+          if (ws[`B${i}`]) {
+            ws[`B${i}`].z = "0.00%";
+          }
+        }
+        if (ws[`B${projects_count + 1 + 1 + 6}`]) {
+          ws[`B${projects_count + 1 + 1 + 6}`].z = "0.00%";
+        } // 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
+      } else {
+        if (ws["B2"] && ws["B3"] && ws[`B${1 + 1 + 1 + 6}`]) {
+          ws["B2"].z = "0.00%";
+          ws["B3"].z = "0.00%";
+          ws[`B${1 + 1 + 1 + 6}`].z = "0.00%"; //1 (one project) + 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
+        }
+      }
+
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
+      var dept = $("#department-filter").val();
+      var pro = $("#project-filter").val();
+
+      if (user == "all") {
+        user = "all";
+        if (dept == "all") {
+          dept = "_";
+        } else {
+          dept = $("#department-filter option:selected").text();
+        }
+      } else {
+        user = $("#user-filter option:selected").text();
+        dept = "_";
+      }
+      if (pro == "all") {
+        pro = "_";
+      } else {
+        pro = $("#department-filter option:selected").text();
+      }
+      XLSX.writeFile(
+        wb,
+        `expected_hours_report_in_${year}_${month}_of_${user}_${dept}_${pro}.xlsb`
+      );
     });
   handleFilterChange(); // Initial call to load data
 });

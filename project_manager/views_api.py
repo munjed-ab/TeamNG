@@ -846,8 +846,8 @@ def get_user_leave_report(request, pk):
                 leave_data = {
                     "from": log.from_user.username if log.from_user else None,
                     "to": log.to_user.username if log.to_user else None,
-                    "start_date": log.start_date.strftime(r"%d-%m-%Y"),
-                    "end_date": log.end_date.strftime(r"%d-%m-%Y"),
+                    "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+                    "end_date": log.end_date.strftime(r"%Y-%m-%d"),
                     "days": log.v_days,
                     "actual_days": log.days,
                     "type": log.leave_type,
@@ -943,7 +943,7 @@ def get_user_overview_report(request, pk):
 
             missed_hours = total_hours - total_worked_hours
             filtered_data = {
-                "date_range":{"start":order_start.strftime(r"%d/%m/%Y"), "end":order_end.strftime(r"%d/%m/%Y")},
+                "date_range":{"start":order_start.strftime(r"%Y/%m/%d"), "end":order_end.strftime(r"%Y/%m/%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1111,7 +1111,6 @@ def get_manager_activities(request, pk):
                         'date':log.date.strftime(f'%Y-%m-%d'),
                         "hours_worked":Decimal(log.hours_worked),
                         "details":log.details,
-                        
                     })
 
             return JsonResponse(logs)
@@ -1243,8 +1242,8 @@ def get_manager_leave_report(request, pk):
                     leave_data = {
                         "from": log.from_user.username if log.from_user else None,
                         "to": log.to_user.username if log.to_user else None,
-                        "start_date": log.start_date.strftime(r"%d-%m-%Y"),
-                        "end_date": log.end_date.strftime(r"%d-%m-%Y"),
+                        "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+                        "end_date": log.end_date.strftime(r"%Y-%m-%d"),
                         "days": log.v_days,
                         "actual_days": log.days,
                         "type": log.leave_type,
@@ -1358,7 +1357,7 @@ def get_manager_overview_report(request, pk):
 
             missed_hours = total_hours - total_worked_hours
             filtered_data = {
-                "date_range":{"start":order_start.strftime(r"%d/%m/%Y"), "end":order_end.strftime(r"%d/%m/%Y")},
+                "date_range":{"start":order_start.strftime(r"%Y/%m/%d"), "end":order_end.strftime(r"%Y/%m/%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1596,21 +1595,40 @@ def get_admin_project_report(request, pk):
                     department=department_id
                 )
 
+
             projects = defaultdict(lambda: {"project":"", "department":"", "location":"", "worked_hours":0})
+
+            _projects = Project.objects.all()
+            for project in _projects:
+                pro_name = project.project_name
+                projects[pro_name]["project"] = pro_name
+
             logs = {"projects":[]}
 
-            for user in users:
-                activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
+            if len(users) > 0:
+                for user in users:
+                    activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
 
-                dept = user.department.dept_name
-                loc = user.location.loc_name
+                    dept = user.department.dept_name
+                    loc = user.location.loc_name
+                    if len(activity_logs):
+                        for log in activity_logs:
+                            project_name = log.project.project_name
+                            projects[project_name]["project"] = project_name
+                            if not dept in projects[project_name]["department"]:
+                                projects[project_name]["department"] += dept + ", "
+                            if not loc in projects[project_name]["location"]:
+                                projects[project_name]["location"] += loc + ", "
+                            projects[project_name]["worked_hours"] += log.hours_worked
+                    else:
+                        for project in _projects:
+                            pro_name = project.project_name
+                            projects[pro_name]["department"] = dept + ", "
 
-                for log in activity_logs:
-                    project_name = log.project.project_name
-                    projects[project_name]["project"] = project_name
-                    projects[project_name]["department"] = dept
-                    projects[project_name]["location"] = loc
-                    projects[project_name]["worked_hours"] += log.hours_worked
+            else:
+                for project in _projects:
+                    pro_name = project.project_name
+                    projects[pro_name]["department"] = Department.objects.get(id=department_id).dept_name
 
             # Convert defaultdict to list of dictionaries
             logs["projects"] = list(projects.values())
@@ -1676,8 +1694,8 @@ def get_admin_leave_report(request, pk):
                     leave_data = {
                         "from": log.from_user.username if log.from_user else None,
                         "to": log.to_user.username if log.to_user else None,
-                        "start_date": log.start_date.strftime(r"%d-%m-%Y"),
-                        "end_date": log.end_date.strftime(r"%d-%m-%Y"),
+                        "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+                        "end_date": log.end_date.strftime(r"%Y-%m-%d"),
                         "days": log.v_days,
                         "actual_days": log.days,
                         "type": log.leave_type,
@@ -1791,7 +1809,7 @@ def get_admin_overview_report(request, pk):
 
             missed_hours = total_hours - total_worked_hours
             filtered_data = {
-                "date_range":{"start":order_start.strftime(r"%d/%m/%Y"), "end":order_end.strftime(r"%d/%m/%Y")},
+                "date_range":{"start":order_start.strftime(r"%Y/%m/%d"), "end":order_end.strftime(r"%Y/%m/%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1857,7 +1875,7 @@ def get_admin_pro_act_report(request, pk):
             else:
                 users = CustomUser.objects.filter(
                     is_superuser = False,
-                    id=int(user_id)
+                    id=user_id
                 )
             if department_id != "all":
                 users = CustomUser.objects.filter(
@@ -1899,8 +1917,12 @@ def get_admin_pro_act_report(request, pk):
                     project_activities[project_name][activity_name] += hours_worked
 
             # Calculate percentages
-            project_percentages = {project_name: (hours / total_hours) * 100 for project_name, hours in project_totals.items()}
-            activity_percentages = {activity_name: (hours / total_hours) * 100 for activity_name, hours in activity_totals.items()}
+            if len(users):
+                project_percentages = {project_name: (hours / total_hours) * 100 for project_name, hours in project_totals.items()}
+                activity_percentages = {activity_name: (hours / total_hours) * 100 for activity_name, hours in activity_totals.items()}
+            else:
+                project_percentages = {project_name: 0 for project_name, hours in project_totals.items()}
+                activity_percentages = {activity_name: 0 for activity_name, hours in activity_totals.items()}
 
             filtered_data = {"report": []}
 
@@ -1913,7 +1935,7 @@ def get_admin_pro_act_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
-            
+
 
             return JsonResponse(filtered_data)
         else:

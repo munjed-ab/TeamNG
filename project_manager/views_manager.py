@@ -165,9 +165,13 @@ def report_manager_pro_act(request, pk):
         location=user.location.id,
         department=user.department.id
     )
+    projects_count = Project.objects.all().count()
+    activities_count = Activity.objects.all().count()
 
     context = {
         "user" : user,
         "users":users,
+        "projects_count":projects_count,
+        "activities_count":activities_count
     }
     return render(request, "project_manager/reports/managers/report_manager_pro_act.html", context)

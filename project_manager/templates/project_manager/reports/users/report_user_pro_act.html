@@ -58,7 +58,8 @@
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
-{{user.id|json_script:"user_id"}}
+{{user.id|json_script:"user_id"}}{{projects_count|json_script:"projects_count"}}
+{{activities_count|json_script:"activities_count"}}
 <script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
 <script src="{% static 'js/reports/users/report_user_project_for_activity.js' %}"></script>
 {% endblock %}

@@ -67,7 +67,7 @@ $(document).ready(function () {
 
       $("<td>").text(log.activity).appendTo(row);
       $("<td>").text(log.department).appendTo(row);
-      $("<td>").text(log.date).appendTo(row);
+      $("<td>").text(new Date(log.date).toDateString()).appendTo(row);
       $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
       $("<td>").text(log.details).appendTo(row);
     });
@@ -91,9 +91,42 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      ws["!cols"] = [
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+      ];
+      ws["!rows"] = [{ hpx: 30 }];
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
+      var pro = $("#project-filter").val();
 
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+      if (user == "all") {
+        user = "all";
+      } else {
+        user = $("#user-filter option:selected").text();
+      }
+      if (pro == "all") {
+        pro = "_";
+      } else {
+        pro = $("#department-filter option:selected").text();
+      }
+      XLSX.writeFile(
+        wb,
+        `activities_report_in_${year}_${month}_of_${user}_${pro}.xlsb`
+      );
     });
   handleFilterChange(); // Initial call to load data
 });

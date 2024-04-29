@@ -657,11 +657,15 @@ def report_admin_pro_act(request, pk):
         is_superuser = False
     ).order_by("username")
     departments = Department.objects.all()
-
+    projects_count = Project.objects.all().count()
+    activities_count = Activity.objects.all().count()
+    
     context = {
         "user":user,
         "users":users,
         "departments":departments,
+        "projects_count":projects_count,
+        "activities_count":activities_count
     }
     return render(request, "project_manager/reports/admins/report_admin_pro_act.html", context)
 

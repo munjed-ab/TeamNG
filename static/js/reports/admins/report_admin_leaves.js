@@ -63,9 +63,9 @@ $(document).ready(function () {
       var row = $("<tr>").appendTo(logs_table_body);
       $("<td>").text(log.from).appendTo(row);
       $("<td>").text(log.to).appendTo(row);
-      $("<td>").text(log.start_date).appendTo(row);
+      $("<td>").text(new Date(log.start_date).toDateString()).appendTo(row);
 
-      $("<td>").text(log.end_date).appendTo(row);
+      $("<td>").text(new Date(log.end_date).toDateString()).appendTo(row);
       $("<td>").text(log.days).appendTo(row);
       $("<td>").text(log.actual_days).appendTo(row);
       $("<td>").text(log.type).appendTo(row);
@@ -95,14 +95,34 @@ $(document).ready(function () {
         document.getElementById("TableToExport")
       );
 
-      // Process Data (add a new row)
       var ws = wb.Sheets["Sheet1"];
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
 
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
+      var dept = $("#department-filter").val();
+
+      if (user == "all") {
+        user = "all";
+        if (dept == "all") {
+          dept = "_";
+        } else {
+          dept = $("#department-filter option:selected").text();
+        }
+      } else {
+        user = $("#user-filter option:selected").text();
+        dept = "_";
+      }
+      XLSX.writeFile(
+        wb,
+        `leaves_report_in_${year}_${month}_of_${user}_${dept}.xlsb`
+      );
     });
-  handleFilterChange(); // Initial call to load data
+  handleFilterChange();
 });

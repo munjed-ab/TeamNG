@@ -73,7 +73,7 @@
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
-{{user.id|json_script:"user_id"}}
+{{user.id|json_script:"user_id"}}{{projects|length|json_script:"projects_count"}}
 <script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
 <script src="{% static 'js/reports/users/report_user_expectedhours.js' %}"></script>
 {% endblock %}

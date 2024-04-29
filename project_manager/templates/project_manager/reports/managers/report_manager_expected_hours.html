@@ -52,7 +52,6 @@
         {% for user in users %}
         <option value="{{user.id}}">{{user.username}}</option>
         {% endfor %}
-        <!-- Add options dynamically using AJAX if needed -->
       </select>
     </div>
   </div>
@@ -83,7 +82,7 @@
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
-{{user.id|json_script:"user_id"}}
+{{user.id|json_script:"user_id"}}{{projects|length|json_script:"projects_count"}}
 <script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
 <script src="{% static 'js/reports/managers/report_manager_expected_hours.js' %}"></script>
 {% endblock %}

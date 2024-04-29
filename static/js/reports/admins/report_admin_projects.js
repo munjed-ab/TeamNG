@@ -104,8 +104,35 @@ $(document).ready(function () {
         origin: -1,
       });
 
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
+      var dept = $("#department-filter").val();
+      var pro = $("#project-filter").val();
+
+      if (user == "all") {
+        user = "all";
+        if (dept == "all") {
+          dept = "_";
+        } else {
+          dept = $("#department-filter option:selected").text();
+        }
+      } else {
+        user = $("#user-filter option:selected").text();
+        dept = "_";
+      }
+      if (pro == "all") {
+        pro = "_";
+      } else {
+        pro = $("#department-filter option:selected").text();
+      }
+      XLSX.writeFile(
+        wb,
+        `projects_report_in_${year}_${month}_of_${user}_${dept}_${pro}.xlsb`
+      );
     });
   handleFilterChange(); // Initial call to load data
 });

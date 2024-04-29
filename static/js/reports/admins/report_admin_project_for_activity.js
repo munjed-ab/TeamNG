@@ -1,4 +1,11 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
+const activities_count = JSON.parse(
+  document.getElementById("activities_count").textContent
+);
+const projects_count = JSON.parse(
+  document.getElementById("projects_count").textContent
+);
+
 $.ajaxSetup({
   beforeSend: function (xhr, settings) {
     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -99,11 +106,6 @@ $(document).ready(function () {
     });
 
     $("<th>").text("Percentage").appendTo(row_head);
-    for (let i = 0; i < response.length; i++) {
-      if (all.activity.name == response[i].activity.name) {
-        $("<td>").text(response[i].hours_worked).appendTo(col_head);
-      }
-    }
   }
 
   $(
@@ -133,9 +135,67 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      let cells = [
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+      ];
+      for (let index = 2; index < activities_count + 3; index++) {
+        if (ws[`A${index}`]) {
+          if (ws[`A${index}`].v == "Percentage") {
+            cells.forEach((cell) => {
+              if (ws[`${cell}${index}`]) {
+                ws[`${cell}${index}`].z = "0.00%";
+              }
+            });
+          }
+        }
+      }
 
-      // Package and Release Data (`writeFile` tries to write and save an XLSB file)
-      XLSX.writeFile(wb, "Report.xlsb");
+      if (ws[`${cells[projects_count]}1`]) {
+        if ((ws[`${cells[projects_count]}1`].v = "Percentage")) {
+          for (let index = 2; index < activities_count + 3; index++) {
+            if (ws[`${cells[projects_count]}${index}`]) {
+              ws[`${cells[projects_count]}${index}`].z = "0.00%";
+            }
+          }
+        }
+      }
+
+      var month = $("#month-filter").val();
+      var year = $("#year-filter").val();
+      if (month == "all") {
+        month = "_";
+      }
+      var user = $("#user-filter").val();
+      var dept = $("#department-filter").val();
+
+      if (user == "all") {
+        user = "all";
+        if (dept == "all") {
+          dept = "_";
+        } else {
+          dept = $("#department-filter option:selected").text();
+        }
+      } else {
+        user = $("#user-filter option:selected").text();
+        dept = "_";
+      }
+
+      XLSX.writeFile(
+        wb,
+        `project_for_activity_report_in_${year}_${month}_of_${user}_${dept}.xlsb`
+      );
     });
   handleFilterChange(); // Initial call to load data
 });

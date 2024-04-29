@@ -840,8 +840,12 @@ def report_user_pro_act(request, pk):
         return redirect("login")
 
     user = CustomUser.objects.get(id=pk)
+    projects_count = Project.objects.all().count()
+    activities_count = Activity.objects.all().count()
 
     context = {
         "user" : user,
+        "projects_count":projects_count,
+        "activities_count":activities_count
     }
     return render(request, "project_manager/reports/users/report_user_pro_act.html", context)
