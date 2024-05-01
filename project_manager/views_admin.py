@@ -670,3 +670,17 @@ def report_admin_pro_act(request, pk):
     return render(request, "project_manager/reports/admins/report_admin_pro_act.html", context)
 
 
+def report_holiday(request):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not request.user.is_admin:
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    return render(request, "project_manager/reports/admins/report_admin_holidays.html", context={})
+    

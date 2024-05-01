@@ -36,35 +36,8 @@
         <option value="2025">2026</option>
       </select>
     </div>
-    <div class="col-md-3 wrapper-filter">
-      <label for="project-filter">Project:</label>
-      <select id="project-filter" class="form-control">
-        <option value="all">All Projects</option>
-        {% for project in projects %}
-        <option value="{{project.id}}">{{project.project_name}}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3 wrapper-filter">
-      <label for="user-filter">User:</label>
-      <select id="user-filter" class="form-control">
-        <option value="all">All Users</option>
-        {% for user in users %}
-        <option value="{{user.id}}">{{user.username}}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3 wrapper-filter">
-      <label for="department-filter">Department:</label>
-      <select id="department-filter" class="form-control">
-        <option value="all">All Departments</option>
-        {% for dept in departments %}
-        <option value="{{dept.id}}">{{dept.dept_name}}</option>
-        {% endfor %}
-      </select>
-    </div>
   </div>
-  <h2 class="float-left">Activity</h2>
+  <h2 class="float-left">Holidays</h2>
   <h2 class="float-right">
     <a href="#">
       <i
@@ -79,14 +52,8 @@
     <table id="TableToExport" class="table table-striped">
       <thead class="table-head-color">
         <tr>
-          <th>time added</th>
-          <th>username</th>
-          <th>project</th>
-          <th>activty type</th>
-          <th>department</th>
-          <th>date</th>
-          <th>hours worked</th>
-          <th>details</th>
+          <th>holiday name</th>
+          <th>holiday date</th>
         </tr>
       </thead>
       <tbody id="logs-table">
@@ -96,7 +63,6 @@
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}
-{{user.id|json_script:"user_id"}}
 <script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
-<script src="{% static 'js/reports/admins/report_admin_activities.js' %}"></script>
+<script src="{% static 'js/reports/admins/report_admin_holidays.js' %}"></script>
 {% endblock %}

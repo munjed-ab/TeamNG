@@ -1944,3 +1944,46 @@ def get_admin_pro_act_report(request, pk):
     except:
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+def get_holiday_report(request):
+    try:
+
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+
+        order_start = date.today()
+        order_end = date.today()
+        if month and year:
+            if month == "all":
+                order_start = date(int(year), 1, 1)
+                order_end = date(int(year), 12, 31)
+            else:
+                order_start = date(int(year), int(month), 1)
+                if month == "12":
+                    last_month_day = date(int(year) + 1, 1, 1) - order_start
+                else:
+                    last_month_day = date(int(year), int(month) + 1, 1) - order_start
+                order_end = date(int(year), int(month), last_month_day.days)
+
+
+            _holidays = Holiday.objects.filter(
+                holiday_date__range = [order_start, order_end]
+            )
+
+            print(_holidays)
+            
+            filtered_data = {"report": []}
+            for holiday in _holidays:
+                holiday_name = holiday.holiday_name
+                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%Y-%m-%d")})
+
+
+
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)

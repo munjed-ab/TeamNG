@@ -1,4 +1,3 @@
-const user_id = JSON.parse(document.getElementById("user_id").textContent);
 $.ajaxSetup({
   beforeSend: function (xhr, settings) {
     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -32,22 +31,16 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
-    var project = $("#project-filter").val();
-    var user = $("#user-filter").val();
-    var department = $("#department-filter").val();
 
     $.ajax({
-      url: `/api/report/project/admin/${user_id}`,
+      url: "/api/report/holiday/",
       method: "GET",
       data: {
         month: month,
         year: year,
-        project: project,
-        user: user,
-        department: department,
       },
       success: function (response) {
-        updateTable(response.projects);
+        updateTable(response.report);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -63,31 +56,12 @@ $(document).ready(function () {
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>").text(log.project).appendTo(row);
-      $("<td>").text(log.department).appendTo(row);
-      $("<td>").text(log.location).appendTo(row);
-      $("<td>")
-        .text(
-          new Intl.NumberFormat().format(
-            parseFloat(log.worked_hours).toFixed(2)
-          )
-        )
-        .appendTo(row);
+      $("<td>").text(log.name).appendTo(row);
+      $("<td>").text(new Date(log.date).toDateString()).appendTo(row);
     });
   }
 
-  $(
-    "#month-filter, #year-filter, #user-filter, #department-filter, #project-filter"
-  ).change(function () {
-    var selectedFilter = $(this).attr("id");
-
-    if (selectedFilter === "user-filter") {
-      // Reset department filter to "all"
-      $("#department-filter").val("all");
-    } else if (selectedFilter === "department-filter") {
-      // Reset user filter to "all"
-      $("#user-filter").val("all");
-    }
+  $("#month-filter, #year-filter").change(function () {
     handleFilterChange();
   });
   document
@@ -98,7 +72,6 @@ $(document).ready(function () {
         document.getElementById("TableToExport")
       );
 
-      // Process Data (add a new row)
       var ws = wb.Sheets["Sheet1"];
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
@@ -122,30 +95,8 @@ $(document).ready(function () {
       if (month == "all") {
         month = "_";
       }
-      var user = $("#user-filter").val();
-      var dept = $("#department-filter").val();
-      var pro = $("#project-filter").val();
 
-      if (user == "all") {
-        user = "all";
-        if (dept == "all") {
-          dept = "_";
-        } else {
-          dept = $("#department-filter option:selected").text();
-        }
-      } else {
-        user = $("#user-filter option:selected").text();
-        dept = "_";
-      }
-      if (pro == "all") {
-        pro = "_";
-      } else {
-        pro = $("#department-filter option:selected").text();
-      }
-      XLSX.writeFile(
-        wb,
-        `projects_report_in_${year}_${month}_of_${user}_${dept}_${pro}.xlsb`
-      );
+      XLSX.writeFile(wb, `holidays_report_in_${year}_${month}.xlsb`);
     });
-  handleFilterChange(); // Initial call to load data
+  handleFilterChange();
 });

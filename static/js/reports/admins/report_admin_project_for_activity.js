@@ -135,6 +135,20 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      ws["!cols"] = [
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+      ];
+      ws["!rows"] = [{ hpx: 30 }];
       let cells = [
         "B",
         "C",

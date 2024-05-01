@@ -43,7 +43,6 @@
         {% for user in users %}
         <option value="{{user.id}}">{{user.username}}</option>
         {% endfor %}
-
       </select>
     </div>
 
@@ -54,11 +53,10 @@
         {% for dept in departments %}
         <option value="{{dept.id}}">{{dept.dept_name}}</option>
         {% endfor %}
-
       </select>
     </div>
   </div>
-  <h2 class="float-left">Leave</h2>
+  <h2 class="float-left">Leaves</h2>
   <h2 class="float-right">
     <a href="#">
       <i
@@ -81,7 +79,6 @@
           <th>actual_days (execluded)</th>
           <th>type</th>
           <th>respond</th>
-          <th></th>
         </tr>
       </thead>
       <tbody id="logs-table">

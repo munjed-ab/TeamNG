@@ -31,6 +31,7 @@ urlpatterns = [
     path("report-leave-user/<str:pk>", views.report_user_leave, name="report_user_leave"),
     path("report-expected-hours-user/<str:pk>", views.report_user_expectedhours, name="report_user_expectedhours"),
     path("report-project-activity-user/<str:pk>", views.report_user_pro_act, name="report_user_pro_act"),
+    
 
     #AUTH
     path("password_reset/",
@@ -82,6 +83,7 @@ urlpatterns = [
     path("report-admin-leaves/<str:pk>", views_admin.report_admin_leave, name="report_admin_leave"),
     path("report-admin-overview/<str:pk>", views_admin.report_admin_overview, name="report_admin_overview"),
     path("report-project-activity-admin/<str:pk>", views_admin.report_admin_pro_act, name="report_admin_pro_act"),
+    path("report-holiday/", views_admin.report_holiday, name="report_holiday"),
 
     #MANAGER
     path("manager-overview/", views_manager.manager_overview, name="manager_overview"),
@@ -118,6 +120,7 @@ urlpatterns = [
     path('api/report/leave/admin/<str:pk>', views_api.get_admin_leave_report, name='get_admin_leave_report'),
     path('api/report/expected_hours/admin/<str:pk>', views_api.get_admin_overview_report, name='get_admin_overview_report'),
     path('api/report/project-for-activity/admin/<str:pk>', views_api.get_admin_pro_act_report, name='get_admin_pro_act_report'),
+    path('api/report/holiday/', views_api.get_holiday_report, name='get_holiday_report'),
 
 ]
 if settings.DEBUG:

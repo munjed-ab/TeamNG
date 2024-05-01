@@ -173,7 +173,20 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
-
+      ws["!cols"] = [
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+        { wpx: 80 },
+      ];
+      ws["!rows"] = [{ hpx: 30 }];
       var project = $("#project-filter").val();
       if (project == "all") {
         for (let i = 2; i < projects_count + 3; i++) {

@@ -32,6 +32,7 @@
   --danger: #e74a3b;
   --light: #f8f9fc;
   --dark: #5a5c69;
+  --background-color-main: #f7f9ff;
   --breakpoint-xs: 0;
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
@@ -1841,7 +1842,7 @@ pre code {
 
 .table .thead-dark th {
   color: #fff;
-  background-color: #5a5c69;
+  background-color: var(--dark);
   border-color: #6c6e7e;
 }
 
@@ -1853,7 +1854,7 @@ pre code {
 
 .table-dark {
   color: #fff;
-  background-color: #5a5c69;
+  background-color: var(--dark);
 }
 
 .table-dark th,
@@ -2813,8 +2814,8 @@ fieldset:disabled a.btn {
 
 .btn-dark {
   color: #fff;
-  background-color: #5a5c69;
-  border-color: #5a5c69;
+  background-color: var(--dark);
+  border-color: var(--dark);
 }
 
 .btn-dark:hover {
@@ -2834,8 +2835,8 @@ fieldset:disabled a.btn {
 .btn-dark.disabled,
 .btn-dark:disabled {
   color: #fff;
-  background-color: #5a5c69;
-  border-color: #5a5c69;
+  background-color: var(--dark);
+  border-color: var(--dark);
 }
 
 .btn-dark:not(:disabled):not(.disabled):active,
@@ -3105,14 +3106,14 @@ fieldset:disabled a.btn {
 }
 
 .btn-outline-dark {
-  color: #5a5c69;
-  border-color: #5a5c69;
+  color: var(--dark);
+  border-color: var(--dark);
 }
 
 .btn-outline-dark:hover {
   color: #fff;
-  background-color: #5a5c69;
-  border-color: #5a5c69;
+  background-color: var(--dark);
+  border-color: var(--dark);
 }
 
 .btn-outline-dark:focus,
@@ -3122,7 +3123,7 @@ fieldset:disabled a.btn {
 
 .btn-outline-dark.disabled,
 .btn-outline-dark:disabled {
-  color: #5a5c69;
+  color: var(--dark);
   background-color: transparent;
 }
 
@@ -3130,8 +3131,8 @@ fieldset:disabled a.btn {
 .btn-outline-dark:not(:disabled):not(.disabled).active,
 .show > .btn-outline-dark.dropdown-toggle {
   color: #fff;
-  background-color: #5a5c69;
-  border-color: #5a5c69;
+  background-color: var(--dark);
+  border-color: var(--dark);
 }
 
 .btn-outline-dark:not(:disabled):not(.disabled):active:focus,
@@ -5342,7 +5343,7 @@ a.badge-light.focus {
 
 .badge-dark {
   color: #fff;
-  background-color: #5a5c69;
+  background-color: var(--dark);
 }
 
 a.badge-dark:hover,
@@ -6903,7 +6904,7 @@ button.bg-light:focus {
 }
 
 .bg-dark {
-  background-color: #5a5c69 !important;
+  background-color: var(--dark) !important;
 }
 
 a.bg-dark:hover,
@@ -6994,7 +6995,7 @@ button.bg-dark:focus {
 }
 
 .border-dark {
-  border-color: #5a5c69 !important;
+  border-color: var(--dark) !important;
 }
 
 .border-white {
@@ -10091,7 +10092,7 @@ a.text-light:focus {
 }
 
 .text-dark {
-  color: #5a5c69 !important;
+  color: var(--dark) !important;
 }
 
 a.text-dark:hover,
@@ -10241,7 +10242,7 @@ a:focus {
 }
 
 #wrapper #content-wrapper {
-  background-color: #f7f9ff;
+  background-color: var(--background-color-main);
   width: 100%;
   overflow-x: hidden;
 }
@@ -10279,7 +10280,7 @@ a:focus {
 }
 
 .scroll-to-top:hover {
-  background: #5a5c69;
+  background: var(--dark);
 }
 
 .scroll-to-top i {
@@ -10394,8 +10395,8 @@ a:focus {
 }
 
 .bg-gradient-dark {
-  background-color: #5a5c69;
-  background-image: linear-gradient(180deg, #5a5c69 10%, #373840 100%);
+  background-color: var(--dark);
+  background-image: linear-gradient(180deg, var(--dark) 10%, #373840 100%);
   background-size: cover;
 }
 
@@ -10428,7 +10429,7 @@ a:focus {
 }
 
 .bg-gray-800 {
-  background-color: #5a5c69 !important;
+  background-color: var(--dark) !important;
 }
 
 .bg-gray-900 {
@@ -10476,7 +10477,7 @@ a:focus {
 }
 
 .text-gray-800 {
-  color: #5a5c69 !important;
+  color: var(--dark) !important;
 }
 
 .text-gray-900 {
@@ -10549,11 +10550,11 @@ a:focus {
 }
 
 .border-left-dark {
-  border-left: 0.25rem solid #5a5c69 !important;
+  border-left: 0.25rem solid var(--dark) !important;
 }
 
 .border-bottom-dark {
-  border-bottom: 0.25rem solid #5a5c69 !important;
+  border-bottom: 0.25rem solid var(--dark) !important;
 }
 
 .progress-sm {
@@ -11456,7 +11457,7 @@ form.user .btn-user {
 }
 
 .error {
-  color: #5a5c69;
+  color: var(--dark);
   font-size: 7rem;
   position: relative;
   line-height: 1;
@@ -11599,10 +11600,10 @@ form.user .btn-user {
   content: attr(data-text);
   position: absolute;
   left: 2px;
-  text-shadow: -1px 0 #cccdd1;
+  text-shadow: -1px 0 var(--background-color-main);
   top: 0;
-  color: #5a5c69;
-  background: #cccdd1;
+  color: var(--dark);
+  background: var(--background-color-main);
   overflow: hidden;
   clip: rect(0, 900px, 0, 0);
   animation: noise-anim 2s infinite linear alternate-reverse;
@@ -11744,10 +11745,10 @@ form.user .btn-user {
   content: attr(data-text);
   position: absolute;
   left: -2px;
-  text-shadow: 1px 0 #cccdd1;
+  text-shadow: 1px 0 var(--background-color-main);
   top: 0;
-  color: #5a5c69;
-  background: #cccdd1;
+  color: var(--dark);
+  background: var(--background-color-main);
   overflow: hidden;
   clip: rect(0, 900px, 0, 0);
   animation: noise-anim-2 3s infinite linear alternate-reverse;

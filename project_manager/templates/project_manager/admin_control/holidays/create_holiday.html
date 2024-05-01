@@ -59,6 +59,7 @@
     background-color: #0056b3;
   }
 </style>
+<link rel="stylesheet" href="{% static 'css/flatpickr.min.css' %}" />
 <div class="container">
   <h2>Create Holiday</h2>
   <form method="POST" action="" class="user-form">
@@ -72,20 +73,25 @@
 
     <div class="form-group">
       <label for="{{ form.holiday_date.id_for_label }}">Holiday Date</label>
-      <input type="date" name="holiday_date" id="holiday_date" required />
+      <input type="text" name="holiday_date" id="holiday_date" required />
       <span class="help">{{ form.holiday_date.help_text }}</span>
       <span class="error">{{ form.holiday_date.errors }}</span>
     </div>
 
-    <div style="text-align: center">
-      <button type="submit" class="btn btn-primary">Create Holiday</button>
+    <div style="display: flex; align-items: center; justify-content: center">
+      <button
+        style="background-color: var(--primary)"
+        type="submit"
+        class="btn btn-primary"
+      >
+        Create Holiday
+      </button>
     </div>
   </form>
 </div>
 
-<script>
-  var form_fields = document.getElementsByTagName("input");
-  form_fields[1].placeholder = "Enter holiday name..";
-</script>
+{% endblock %} {% block js %} {{ block.super }}
+<script src="{% static 'js/flatpicker.js' %}"></script>
+<script src="{% static 'js/create_holiday.js' %}"></script>
 
 {% endblock %}
