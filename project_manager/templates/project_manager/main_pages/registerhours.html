@@ -136,6 +136,7 @@
 {% endblock %} {% block js %} {{ block.super }}
 <!--SECURE DATA TO JS-->
 {{ total|json_script:"total" }} {{ date|json_script:"date" }}
-{{request.user.daily_hours|json_script:"daily_hours"}}
+{{request.user.daily_hours|json_script:"daily_hours"}}{{request.scheme|json_script:"scheme"}}
+{{ request.get_host|json_script:"get_host" }}
 <script src="{% static 'js/registerpage.js' %}"></script>
 {% endblock %}

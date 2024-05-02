@@ -139,6 +139,11 @@ def get_leave_data(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+
+
+
+
+
 @ensure_csrf_cookie
 def post_activity_data(request):
     try:
@@ -209,6 +214,38 @@ def calculate_public_holidays(order_start, order_end, users_count):
     pub_holidays = Holiday.objects.filter(holiday_date__range=[order_start, order_end])
     hours_pub_holiday = len(pub_holidays) * 8 * users_count
     return hours_pub_holiday
+
+
+def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True):
+    # convert start_date and end_date to pandas Timestamp objects
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+    # get holidays
+    public_holidays:Holiday
+    if(with_holidays):
+        public_holidays = Holiday.objects.filter(holiday_date__range = [start_date, end_date])
+
+    filtered_dates = []
+
+    date_range = pd.date_range(start=start_date, end=end_date)
+    filtered_dates = [date for date in date_range if date.dayofweek != 6]
+
+    # get all saterdays
+    saturdays = [date for date in filtered_dates if date.dayofweek == 5]
+    banned_saterdays = [
+        saturday
+        for saturday in saturdays
+        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
+    ]
+
+    filtered_dates = [date for date in filtered_dates if date not in banned_saterdays]
+
+    if(with_holidays):
+        holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
+        # exclude public holidays
+        filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
+
+    return filtered_dates
 
 
 @login_required(login_url="login")

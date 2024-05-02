@@ -7,6 +7,7 @@ from django.conf.urls import handler404
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("project_manager.urls")),
+    path("apis/", include("project_manager.api.urls")),
 ]
 if settings.DEBUG:
     #NOT in production

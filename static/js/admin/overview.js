@@ -99,7 +99,7 @@ $(document).ready(function () {
     var project = $("#project-filter").val();
 
     $.ajax({
-      url: "/api/overview_data/",
+      url: "/apis/overview_data/",
       method: "GET",
       data: {
         month: month,

@@ -7,8 +7,9 @@ async function updateCalendar(calendar, start, end) {
   let startYear = start.getFullYear();
   try {
     let data = await $.ajax({
-      url: "/api/get_calendar_data/",
+      url: "/apis/get_calendar_data/",
       method: "GET",
+      mode: "same-origin",
       data: { year: startYear, month: startMonth },
       beforeSend: function (xhr, settings) {
         if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -63,10 +64,10 @@ async function updateCalendar(calendar, start, end) {
 // Function to fetch holiday data for multiple dates
 async function fetchHolidayData(dates) {
   try {
-    let holidayData = {};
     let response = await $.ajax({
-      url: "/api/get_holiday_data/",
+      url: "/apis/calendar_holiday_data/",
       method: "GET",
+      mode: "same-origin",
       data: { dates: dates },
     });
 
@@ -80,8 +81,9 @@ async function fetchHolidayData(dates) {
 async function fetchLeaveData(dates) {
   try {
     let response = await $.ajax({
-      url: "/api/get_leave_data/",
+      url: "/apis/calendar_leave_data/",
       method: "GET",
+      mode: "same-origin",
       data: { dates: dates },
     });
 

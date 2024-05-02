@@ -13,6 +13,8 @@ details.value = "";
 const total_hours_stored = JSON.parse(
   document.getElementById("total").textContent
 );
+const schema = JSON.parse(document.getElementById("scheme").textContent);
+const host = JSON.parse(document.getElementById("get_host").textContent);
 var total_hours = parseFloat(total_hours_stored);
 let data = [];
 const daily_hours = JSON.parse(
@@ -61,6 +63,7 @@ $(document).ready(function () {
     };
 
     data.push(activityLog);
+    console.log(data);
     //localStorage.setItem("activityData", JSON.stringify(data));
 
     $(".new-entries").append(
@@ -134,7 +137,36 @@ $(document).ready(function () {
     return cookieValue;
   }
   $("#save-button").click(function () {
-    var csrftoken = getCookie("csrftoken");
+    const csrftoken = getCookie("csrftoken");
+    var requestBody = {
+      data: JSON.stringify(data),
+    };
+    // const BASE_URL = `${schema}://${host}/`;
+    // const API_URL = BASE_URL + "apis/post_activity_data/";
+    // const request = new Request(API_URL, {
+    //   headers: { "X-CSRFToken": csrftoken, "Content-Type": "application/json" },
+    // });
+
+    // fetch(request, {
+    //   method: "POST",
+    //   mode: "same-origin",
+    //   body: JSON.stringify(data),
+    // })
+    //   .then((response) => {
+    //     if (!response.ok) {
+    //       throw new Error("Network response was not ok");
+    //     }
+    //     return response.json();
+    //   })
+    //   .then((data) => {
+    //     // Clear data array
+    //     data = [];
+    //     //  localStorage.removeItem("activityData");
+    //     location.reload();
+    //   })
+    //   .catch(function (error) {
+    //     console.error("Error saving data:", error);
+    //   });
 
     var headers = new Headers();
     headers.append("Content-Type", "application/json");
@@ -144,13 +176,15 @@ $(document).ready(function () {
       data: JSON.stringify(data),
     };
 
-    fetch("/api/post_activity_data/", {
+    fetch("/apis/post_activity_data/", {
       method: "POST",
+      mode: "same-origin",
       headers: headers,
       body: JSON.stringify(requestBody),
     })
       .then(function (response) {
         if (!response.ok) {
+          location.reload();
           throw new Error("Network response was not ok");
         }
         return response.json();
@@ -163,6 +197,7 @@ $(document).ready(function () {
       })
       .catch(function (error) {
         console.error("Error saving data:", error);
+        location.reload();
       });
   });
 

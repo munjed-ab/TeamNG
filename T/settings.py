@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'project_manager.apps.ProjectManagerConfig',
     'django_celery_results',
     'django_celery_beat',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

@@ -106,7 +106,7 @@ $(document).ready(function () {
     const location = location_id;
 
     $.ajax({
-      url: "/api/overview_manager_data/",
+      url: "/apis/overview_manager_data/",
       method: "GET",
       data: {
         month: month,

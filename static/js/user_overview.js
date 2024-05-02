@@ -60,7 +60,7 @@ $(document).ready(function () {
     var project = $("#project-filter").val();
 
     $.ajax({
-      url: `/api/overview_user_data/${user_id}`,
+      url: `/apis/overview_user_data/${user_id}`,
       method: "GET",
       data: {
         month: month,
