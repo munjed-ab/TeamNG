@@ -41,7 +41,7 @@ $(document).ready(function () {
     var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/api/report/project-for-activity/manager/${user_id}`,
+      url: `/apis/report/project-for-activity/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,

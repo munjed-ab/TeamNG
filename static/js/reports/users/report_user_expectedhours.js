@@ -38,7 +38,7 @@ $(document).ready(function () {
     var project = $("#project-filter").val();
 
     $.ajax({
-      url: `/api/report/expectedhours/user/${user_id}`,
+      url: `/apis/report/expectedhours/user/${user_id}`,
       method: "GET",
       data: {
         month: month,

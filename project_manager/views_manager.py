@@ -1,6 +1,24 @@
 from django.shortcuts import render, redirect
-from .models import CustomUser, Project, Activity, Holiday, Department, Location
+from .models import CustomUser, Project, Activity
 from django.contrib import messages
+
+
+
+#################################################
+#  __  __                                       #
+# |  \/  |                                      #
+# | \  / | __ _ _ __   __ _  __ _  ___ _ __     #
+# | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|    #
+# | |  | | (_| | | | | (_| | (_| |  __/ |       #
+# |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|       #
+#                            __/ |              #
+#   ____                    |___/               #
+#  / __ \                     (_)               #
+# | |  | |_   _____ _ ____   ___  _____      __ #
+# | |  | \ \ / / _ \ '__\ \ / / |/ _ \ \ /\ / / #
+# | |__| |\ V /  __/ |   \ V /| |  __/\ V  V /  #
+#  \____/  \_/ \___|_|    \_/ |_|\___| \_/\_/   #
+#################################################
 
 
 def manager_overview(request):
@@ -35,6 +53,20 @@ def manager_overview(request):
         "loc_name":loc_name
     }
     return render(request, "project_manager/manager/analysis_overview/overview_manager.html", context)
+
+
+
+##################################################################################
+#  __  __                                                               _        #
+# |  \/  |                                                             | |       #
+# | \  / | __ _ _ __   __ _  __ _  ___ _ __   _ __ ___ _ __   ___  _ __| |_ ___  #
+# | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__| | '__/ _ \ '_ \ / _ \| '__| __/ __| #
+# | |  | | (_| | | | | (_| | (_| |  __/ |    | | |  __/ |_) | (_) | |  | |_\__ \ #
+# |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|    |_|  \___| .__/ \___/|_|   \__|___/ #
+#                            __/ |                    | |                        #
+#                           |___/                     |_|                        #
+##################################################################################
+
 
 def report_manager_act(request, pk):
     if not request.user.is_authenticated:

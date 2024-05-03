@@ -36,7 +36,7 @@ $(document).ready(function () {
     var department = $("#department-filter").val();
 
     $.ajax({
-      url: `/api/report/leave/admin/${user_id}`,
+      url: `/apis/report/leave/admin/${user_id}`,
       method: "GET",
       data: {
         month: month,

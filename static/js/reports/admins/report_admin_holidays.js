@@ -33,7 +33,7 @@ $(document).ready(function () {
     var year = $("#year-filter").val();
 
     $.ajax({
-      url: "/api/report/holiday/",
+      url: "/apis/report/holiday/",
       method: "GET",
       data: {
         month: month,

@@ -40,7 +40,7 @@ $(document).ready(function () {
     var year = $("#year-filter").val();
 
     $.ajax({
-      url: `/api/report/project-for-activity/user/${user_id}`,
+      url: `/apis/report/project-for-activity/user/${user_id}`,
       method: "GET",
       data: {
         month: month,

@@ -36,7 +36,7 @@ $(document).ready(function () {
     var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/api/report/activity/manager/${user_id}`,
+      url: `/apis/report/activity/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,

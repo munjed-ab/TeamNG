@@ -35,7 +35,7 @@ $(document).ready(function () {
     var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/api/report/leave/manager/${user_id}`,
+      url: `/apis/report/leave/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,

@@ -19,41 +19,17 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
 
 
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, request.POST)
-        if form.is_valid():
-            login(request, form.get_user())
-            return redirect('dashboard')  # Redirect to dashboard or any other page
-    else:
-        form = AuthenticationForm()
-    return render(request, 'project_manager/login.html', {'form': form})
 
-@login_required
-def logout_view(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
-        return redirect("login")
-    
-    logout(request)
-    return redirect("login")
-
-def dashboard(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
-        return redirect("login")
-    
-    projects = Project.objects.all()
-
-    user = request.user
-    context = {"user":user, "projects":projects}
-    return render(request, 'project_manager/dashboard.html', context)
+#################################################################################
+#  _    _      _                   ______                _   _                  #
+# | |  | |    | |                 |  ____|              | | (_)                 #
+# | |__| | ___| |_ __   ___ _ __  | |__ _   _ _ __   ___| |_ _  ___  _ __  ___  #
+# |  __  |/ _ \ | '_ \ / _ \ '__| |  __| | | | '_ \ / __| __| |/ _ \| '_ \/ __| #
+# | |  | |  __/ | |_) |  __/ |    | |  | |_| | | | | (__| |_| | (_) | | | \__ \ #
+# |_|  |_|\___|_| .__/ \___|_|    |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/ #
+#               | |                                                             #
+#               |_|                                                             #
+#################################################################################
 
 
 def get_firstday_current_last_month():
@@ -129,6 +105,99 @@ def check_is_sun_sat(date):
 
 def check_holiday(holidays, q_date):
     return any(holiday.holiday_date == q_date for holiday in holidays)
+
+
+def get_hours_worked_on_date(user, date):
+    entrylogs = ActivityLogs.objects.filter(
+Q(date=date, user = user)
+)
+    hours_worked_on_date = sum(entry.hours_worked for entry in entrylogs)
+    return hours_worked_on_date
+
+
+def checkActivityInLeaveDays(user, start_date, end_date):
+    data = ActivityLogs.objects.filter(user=user, date__range=[start_date, end_date])
+    return any(log.hours_worked > 0 for log in data)
+
+def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True):
+    # convert start_date and end_date to pandas Timestamp objects
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+    # get holidays
+    public_holidays:Holiday
+    if(with_holidays):
+        public_holidays = Holiday.objects.filter(holiday_date__range = [start_date, end_date])
+
+    filtered_dates = []
+
+    date_range = pd.date_range(start=start_date, end=end_date)
+    filtered_dates = [date for date in date_range if date.dayofweek != 6]
+
+    # get all saterdays
+    saturdays = [date for date in filtered_dates if date.dayofweek == 5]
+    banned_saterdays = [
+        saturday
+        for saturday in saturdays
+        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
+    ]
+
+    filtered_dates = [date for date in filtered_dates if date not in banned_saterdays]
+
+    if(with_holidays):
+        holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
+        # exclude public holidays
+        filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
+
+    return filtered_dates
+
+
+
+#########################################################
+#  __  __       _        __      ___                    #
+# |  \/  |     (_)       \ \    / (_)                   #
+# | \  / | __ _ _ _ __    \ \  / / _  _____      _____  #
+# | |\/| |/ _` | | '_ \    \ \/ / | |/ _ \ \ /\ / / __| #
+# | |  | | (_| | | | | |    \  /  | |  __/\ V  V /\__ \ #
+# |_|  |_|\__,_|_|_| |_|     \/   |_|\___| \_/\_/ |___/ #
+#########################################################
+
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect('dashboard')  # Redirect to dashboard or any other page
+    else:
+        form = AuthenticationForm()
+    return render(request, 'project_manager/login.html', {'form': form})
+
+@login_required
+def logout_view(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    logout(request)
+    return redirect("login")
+
+def dashboard(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    
+    projects = Project.objects.all()
+
+    user = request.user
+    context = {"user":user, "projects":projects}
+    return render(request, 'project_manager/dashboard.html', context)
+
 
 def registerhours(request, date_picked):
     if not request.user.is_authenticated:
@@ -231,13 +300,6 @@ def activity_log(request):
 
     context = {"entry_logs":entry_logs, "date":q}
     return render(request, 'project_manager/main_pages/activity_log.html', context)
-
-def get_hours_worked_on_date(user, date):
-    entrylogs = ActivityLogs.objects.filter(
-Q(date=date, user = user)
-)
-    hours_worked_on_date = sum(entry.hours_worked for entry in entrylogs)
-    return hours_worked_on_date
 
 @transaction.atomic
 def update_entry(request, pk):
@@ -357,40 +419,6 @@ def delete_entry(request, pk):
     
     return render(request, "project_manager/main_pages/delete_entry.html", {"entry":entry})
 
-def checkActivityInLeaveDays(user, start_date, end_date):
-    data = ActivityLogs.objects.filter(user=user, date__range=[start_date, end_date])
-    return any(log.hours_worked > 0 for log in data)
-
-def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True):
-    # convert start_date and end_date to pandas Timestamp objects
-    start_date = pd.Timestamp(start_date)
-    end_date = pd.Timestamp(end_date)
-    # get holidays
-    public_holidays:Holiday
-    if(with_holidays):
-        public_holidays = Holiday.objects.filter(holiday_date__range = [start_date, end_date])
-
-    filtered_dates = []
-
-    date_range = pd.date_range(start=start_date, end=end_date)
-    filtered_dates = [date for date in date_range if date.dayofweek != 6]
-
-    # get all saterdays
-    saturdays = [date for date in filtered_dates if date.dayofweek == 5]
-    banned_saterdays = [
-        saturday
-        for saturday in saturdays
-        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
-    ]
-
-    filtered_dates = [date for date in filtered_dates if date not in banned_saterdays]
-
-    if(with_holidays):
-        holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
-        # exclude public holidays
-        filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
-
-    return filtered_dates
 
 def addleave(request):
     if not request.user.is_authenticated:
@@ -683,6 +711,14 @@ def delete_leave(request, pk):
     return render(request, "project_manager/main_pages/delete_leave.html", {"leave":leave})
 
 
+###############################
+#    ___           ____ __    #
+#   / _ \_______  / _(_) /__  #
+#  / ___/ __/ _ \/ _/ / / -_) #
+# /_/  /_/  \___/_//_/_/\__/  #
+###############################
+
+
 def profile(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
@@ -758,11 +794,26 @@ def upload_profile_image(request):
     return render(request, 'project_manager/profile/upload_profile_img.html', {'form': form})
 
 
+####################
+#   ____ ___  ____ #
+#  / / // _ \/ / / #
+# /_  _/ // /_  _/ #
+#  /_/ \___/ /_/   #
+####################
+
 def handler404(request, exception):
     return render(request, 'project_manager/404.html', status=404)
 
 
-# REPORTS
+########################################################
+#   __  __               ___                    __     #
+#  / / / /__ ___ ____   / _ \___ ___  ___  ____/ /____ #
+# / /_/ (_-</ -_) __/  / , _/ -_) _ \/ _ \/ __/ __(_-< #
+# \____/___/\__/_/    /_/|_|\__/ .__/\___/_/  \__/___/ #
+#                             /_/                      #
+########################################################
+
+
 def report_user_activity(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")

@@ -35,8 +35,9 @@ $(document).ready(function () {
     var project = $("#project-filter").val();
 
     $.ajax({
-      url: `/api/report/activity/user/${user_id}`,
+      url: `/apis/report/activity/user/${user_id}`,
       method: "GET",
+      mode: "same-origin",
       data: {
         month: month,
         year: year,
@@ -114,10 +115,7 @@ $(document).ready(function () {
       } else {
         pro = $("#department-filter option:selected").text();
       }
-      XLSX.writeFile(
-        wb,
-        `activities_report_in_${year}_${month}_of_${pro}.xlsb`
-      );
+      XLSX.writeFile(wb, `activities_report_in_${year}_${month}_${pro}.xlsb`);
     });
   handleFilterChange(); // Initial call to load data
 });

@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from . import views_admin
-from . import views_api
 from . import views_manager
 from django.conf import settings
 from django.conf.urls.static import static
@@ -93,34 +92,6 @@ urlpatterns = [
     path("report-manager-leaves/<str:pk>", views_manager.report_manager_leave, name="report_manager_leave"),
     path("report-manager-overview/<str:pk>", views_manager.report_manager_overview, name="report_manager_overview"),
     path("report-project-activity-manager/<str:pk>", views_manager.report_manager_pro_act, name="report_manager_pro_act"),
-
-    #APIs
-    path('api/get_calendar_data/', views_api.CalendarDataView.as_view(), name='get_calendar_data'),
-    path('api/get_holiday_data/', views_api.get_holiday_data, name='get_holiday_data'),
-    path('api/post_activity_data/', views_api.post_activity_data, name='post_activity_data'),
-    path("api/overview_data/", views_api.overview_data, name="overview_data"),
-    path("api/overview_manager_data/", views_api.overview_manager_data, name="overview_manager_data"),
-    path("api/overview_user_data/<str:pk>", views_api.overview_user_data, name="overview_user_data"),
-    path('api/get_leave_data/', views_api.get_leave_data, name='get_leave_data'),
-    #USER REPORT APIs
-    path('api/report/activity/user/<str:pk>', views_api.get_user_activity_report, name='get_user_activity_report'),
-    path('api/report/project/user/<str:pk>', views_api.get_user_project_report, name='get_user_project_report'),
-    path('api/report/leave/user/<str:pk>', views_api.get_user_leave_report, name='get_user_leave_report'),
-    path('api/report/expectedhours/user/<str:pk>', views_api.get_user_overview_report, name='get_user_overview_report'),
-    path('api/report/project-for-activity/user/<str:pk>', views_api.get_user_pro_act_report, name='get_user_pro_act_report'),
-    #MANAGER REPORT APIs
-    path('api/report/activity/manager/<str:pk>', views_api.get_manager_activities, name='get_manager_activities'),
-    path('api/report/project/manager/<str:pk>', views_api.get_manager_project_report, name='get_manager_project_report'),
-    path('api/report/leave/manager/<str:pk>', views_api.get_manager_leave_report, name='get_manager_leave_report'),
-    path('api/report/expected_hours/manager/<str:pk>', views_api.get_manager_overview_report, name='get_manager_overview_report'),
-    path('api/report/project-for-activity/manager/<str:pk>', views_api.get_manager_pro_act_report, name='get_manager_pro_act_report'),
-    #ADMIN REPORT APIs
-    path('api/report/activity/admin/<str:pk>', views_api.get_admin_activities, name='get_admin_activities'),
-    path('api/report/project/admin/<str:pk>', views_api.get_admin_project_report, name='get_admin_project_report'),
-    path('api/report/leave/admin/<str:pk>', views_api.get_admin_leave_report, name='get_admin_leave_report'),
-    path('api/report/expected_hours/admin/<str:pk>', views_api.get_admin_overview_report, name='get_admin_overview_report'),
-    path('api/report/project-for-activity/admin/<str:pk>', views_api.get_admin_pro_act_report, name='get_admin_pro_act_report'),
-    path('api/report/holiday/', views_api.get_holiday_report, name='get_holiday_report'),
 
 ]
 if settings.DEBUG:

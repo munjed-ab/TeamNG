@@ -62,6 +62,22 @@ def get_firstday_lastday_specific_month(year: int, month: int):
     return first_day_current_month, last_day_current_month
 
 
+def get_start_end_date(month: str, year: str):
+    start_date = date.today()
+    end_date = date.today()
+    if month == "all":
+        start_date = date(int(year), 1, 1)
+        end_date = date(int(year), 12, 31)
+    else:
+        start_date = date(int(year), int(month), 1)
+        if month == "12":
+            last_month_day = date(int(year) + 1, 1, 1) - start_date
+        else:
+            last_month_day = date(int(year), int(month) + 1, 1) - start_date
+        end_date = date(int(year), int(month), last_month_day.days)
+    return start_date, end_date
+
+
 def daterange(start_date, end_date):
     """
     Purpose: Generates a range of dates between start_date and end_date.
@@ -104,7 +120,7 @@ def calculate_public_holidays(order_start: date, order_end: date, users_count: i
     return hours_pub_holiday
 
 
-def calculate_leave_days(users: CustomUser, order_start: date, order_end: date)-> int:
+def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: date)-> int:
     """
     Purpose: Calculates the total number of leave days taken by users within a time period.
     Parameters:
@@ -128,7 +144,7 @@ def calculate_leave_days(users: CustomUser, order_start: date, order_end: date)-
             hours_leave_days += len(filtered_dates) * 8
     return hours_leave_days
 
-def calculate_project_and_activity_data(users: CustomUser, project_id: int, order_start: date, order_end: date):
+def calculate_project_and_activity_data(users: list[CustomUser], project_id: int, date_start: date, date_end: date):
     """
     Purpose: Calculates project and activity data for a given set of users within a time period.
     Parameters:
@@ -142,7 +158,7 @@ def calculate_project_and_activity_data(users: CustomUser, project_id: int, orde
     activity_type_data = defaultdict(lambda: {'total': 0, 'percentage': 0, 'activity_logs': []})
     total_worked_hours = 0
     for user in users:
-        activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
+        activity_logs = get_activity_logs(user.id, project_id, date_start, date_end)
         for activity_log in activity_logs:
             project_name = activity_log.project.project_name
             project_data[project_name]['total'] += activity_log.hours_worked
@@ -233,6 +249,130 @@ def getUserSupervisor(user: CustomUser) -> str:
                 return str(sup.get_full_name())
         elif user.is_admin:
             return ""
+
+
+def prepare_report_activity_logs(users: list[CustomUser], project_id: int, start_date: date, end_date:date)-> dict:
+    logs = {"activity_logs":[]}
+    for user in users:
+        activity_logs = get_activity_logs(user.id, project_id, start_date, end_date)
+        for log in activity_logs:
+            project_name = log.project.project_name
+            logs["activity_logs"].append({
+                'time_added':log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
+                'username': log.user.username,
+                'project': project_name,
+                'activity':log.activity.activity_name,
+                'department':log.user.department.dept_name,
+                'date':log.date.strftime(f'%Y-%m-%d'),
+                "hours_worked":Decimal(log.hours_worked),
+                "details":log.details,
+            })
+    return logs
+
+
+def prepare_report_projects(users: list[CustomUser], project_id: int, start_date: date, end_date: date)-> dict:
+    projects = defaultdict(lambda: {"project":"", "username":"", "department":"", "location":"", "supervisor":"","worked_hours":0})
+    logs = {"projects":[]}
+    for user in users:
+        activity_logs = get_activity_logs(user.id, project_id, start_date, end_date)
+        supervisor = getUserSupervisor(user)
+        username = user.username
+        dept = user.department.dept_name
+        loc = user.location.loc_name
+
+        for log in activity_logs:
+            project_name = log.project.project_name
+            projects[project_name]["project"] = project_name
+            projects[project_name]["username"] = username
+            projects[project_name]["department"] = dept
+            projects[project_name]["location"] = loc
+            projects[project_name]["supervisor"] = supervisor
+            projects[project_name]["worked_hours"] += log.hours_worked
+
+    logs["projects"] = list(projects.values())
+    return logs
+
+
+def prepare_report_leaves(users: list[CustomUser], start_date: date, end_date: date)-> dict:
+    leaves = []
+    logs = {"leaves": []}
+    for user in users:
+        leaves_queryset = Leave.objects.filter(
+            from_user=user.id,
+            start_date__lte=end_date,  # Leave starts before or on end_date
+            end_date__gte=start_date  # Leave ends after or on start_date
+        )
+        for log in leaves_queryset:
+            leave_data = {
+                "from": log.from_user.username if log.from_user else None,
+                "to": log.to_user.username if log.to_user else None,
+                "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+                "end_date": log.end_date.strftime(r"%Y-%m-%d"),
+                "days": log.v_days,
+                "actual_days": log.days,
+                "type": log.leave_type,
+                "respond": "reject" if log.is_rejected else "accept" if log.is_approved else "pending"
+            }
+            leaves.append(leave_data)
+
+    logs["leaves"] = leaves
+    return logs
+
+
+def prepare_report_expected_projects_workes(users: list[CustomUser], project_id: int, total_hours: int, date_start: date, date_end: date):
+    project_data = defaultdict(lambda: {'total':0, 'percentage': 0})
+    total_worked_hours:float = 0
+    for user in users:
+        activity_logs = get_activity_logs(user.id, project_id, date_start, date_end)
+        for activity_log in activity_logs:
+            project_name = activity_log.project.project_name
+
+            project_data[project_name]['total'] += activity_log.hours_worked
+            total_worked_hours+=activity_log.hours_worked
+
+        projects:Project
+        if project_id == "all":
+            projects = Project.objects.all()
+        else:
+            projects = Project.objects.filter(id=int(project_id))
+
+        for project in projects:
+            project_data[project.project_name]['percentage'] = project_data[project.project_name]['total']*100 / total_hours
+
+    return project_data, total_worked_hours
+
+
+def prepare_report_pro_act_percentages(users: list[CustomUser], total_hours, date_start: date, date_end: date):
+    project_totals = defaultdict(float)
+    activity_totals = defaultdict(float)
+    project_activities = defaultdict(lambda: defaultdict(float))
+
+    _projects = Project.objects.all()
+    _activitys = Activity.objects.all()
+    for pro in _projects:
+        project_name = pro.project_name
+        project_totals[project_name] = 0
+        for act in _activitys:
+            activity_name = act.activity_name
+            activity_totals[activity_name] = 0
+            project_activities[project_name][activity_name] = 0
+
+    for user in users:
+        activity_logs = get_activity_logs(user.id, "all", date_start, date_end)
+        for activity_log in activity_logs:
+            project_name = activity_log.project.project_name
+            activity_name = activity_log.activity.activity_name
+            hours_worked = activity_log.hours_worked
+
+            project_totals[project_name] += hours_worked
+            activity_totals[activity_name] += hours_worked
+
+            project_activities[project_name][activity_name] += hours_worked
+
+    # Calculate percentages
+    project_percentages = {project_name: (hours / total_hours) * 100 for project_name, hours in project_totals.items()}
+    activity_percentages = {activity_name: (hours / total_hours) * 100 for activity_name, hours in activity_totals.items()}
+    return project_activities, project_percentages, activity_percentages
 
 
 ##########################################################################
@@ -443,19 +583,8 @@ def overview_data(request):
         department_id = request.GET.get("department")
         project_id = request.GET.get("project")
 
-        order_start = date.today()
-        order_end = date.today()
         if month and year and user_id and department_id and project_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year)+1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month)+1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
+            start_date, end_date = get_start_end_date(month, year)
 
             users = CustomUser.objects.filter(is_superuser=False)
             if user_id != "all":
@@ -464,13 +593,13 @@ def overview_data(request):
                 users = users.filter(department=department_id)
 
 
-            total_hours = 8 * len(get_filtered_dates(order_start, order_end)) * len(users)
+            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * len(users)
 
-            hours_leave_days = calculate_leave_days(users, order_start, order_end)
-            hours_pub_holiday = calculate_public_holidays(order_start, order_end, len(users))
+            hours_leave_days = calculate_leave_days(users, start_date, end_date)
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
             total_hours -= hours_pub_holiday
 
-            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, order_start, order_end)
+            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - float(total_worked_hours)
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, float(total_worked_hours), missed_hours, hours_leave_days, hours_pub_holiday)
 
@@ -497,19 +626,8 @@ def overview_manager_data(request):
         department_id = request.GET.get("department")
         project_id = request.GET.get("project")
 
-        order_start = date.today()
-        order_end = date.today()
         if month and year and user_id and department_id and project_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year)+1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month)+1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
+            start_date, end_date = get_start_end_date(month, year)
 
 
             users = CustomUser.objects.filter(
@@ -521,13 +639,13 @@ def overview_manager_data(request):
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
-            total_hours = 8 * len(get_filtered_dates(order_start, order_end)) * len(users)
+            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * len(users)
 
-            hours_leave_days = calculate_leave_days(users, order_start, order_end)
-            hours_pub_holiday = calculate_public_holidays(order_start, order_end, len(users))
+            hours_leave_days = calculate_leave_days(users, start_date, end_date)
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
             total_hours -= hours_pub_holiday
 
-            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, order_start, order_end)
+            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
 
@@ -551,33 +669,21 @@ def overview_user_data(request, pk):
         user_id = int(pk)
         project_id = request.GET.get("project")
 
-        order_start = date.today()
-        order_end = date.today()
         if month and year and user_id and project_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year)+1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month)+1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
-
+            start_date, end_date = get_start_end_date(month, year)
 
             users = CustomUser.objects.filter(
                     id = user_id,
                     is_superuser = False,
                 )
             users_count = 1
-            total_hours = 8 * len(get_filtered_dates(order_start, order_end))
+            total_hours = 8 * len(get_filtered_dates(start_date, end_date))
 
-            hours_leave_days = calculate_leave_days(users, order_start, order_end)
-            hours_pub_holiday = calculate_public_holidays(order_start, order_end, len(users))
+            hours_leave_days = calculate_leave_days(users, start_date, end_date)
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
             total_hours -= hours_pub_holiday
 
-            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, order_start, order_end)
+            project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
 
@@ -611,47 +717,24 @@ def overview_user_data(request, pk):
 #######################################################
 
 
-
 @api_view(['GET'])
 @ensure_csrf_cookie
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def get_user_activity_report(request, pk):
     try:
-        user = CustomUser.objects.get(id=pk)
         month = request.GET.get("month")
         year = request.GET.get("year")
         user_id = int(pk)
         project_id = request.GET.get("project")
-        order_start = date.today()
-        order_end = date.today()
         if month and year and user_id and project_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year)+1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month)+1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
+            start_date, end_date = get_start_end_date(month, year)
 
-            logs = {"activity_logs":[]}
-            activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
-            for log in activity_logs:
-                project_name = log.project.project_name
-                logs["activity_logs"].append({
-                    'time_added':log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
-                    'username': log.user.username,
-                    'project': project_name,
-                    'activity':log.activity.activity_name,
-                    'department':log.user.department.dept_name,
-                    'date':log.date.strftime(f'%Y-%m-%d'),
-                    "hours_worked":Decimal(log.hours_worked),
-                    "details":log.details,
-                })
-
+            users = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False,
+            )
+            logs = prepare_report_activity_logs(users, project_id, start_date, end_date)
             return JsonResponse(logs)
         else:
             messages.error(request, "Something wrong :(")
@@ -659,7 +742,7 @@ def get_user_activity_report(request, pk):
     except:
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
-    
+
 
 @api_view(['GET'])
 @ensure_csrf_cookie
@@ -667,47 +750,20 @@ def get_user_activity_report(request, pk):
 @permission_classes([IsAuthenticated])
 def get_user_project_report(request, pk):
     try:
-        user = CustomUser.objects.get(id=pk)
         month = request.GET.get("month")
         year = request.GET.get("year")
         user_id = int(pk)
         project_id = request.GET.get("project")
-        order_start = date.today()
-        order_end = date.today()
 
         if month and year and user_id and project_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year)+1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month)+1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
-            
-            supervisor = getUserSupervisor(user)
+            start_date, end_date = get_start_end_date(month, year)
 
-            projects = defaultdict(lambda: {"project":"", "username":"", "department":"", "location":"", "supervisor":"","worked_hours":0})
-            logs = {"projects":[]}
-            activity_logs = get_activity_logs(user.id, project_id, order_start, order_end)
+            users = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False,
+            )
+            logs = prepare_report_projects(users, project_id, start_date, end_date)
 
-            username = user.username
-            dept = user.department.dept_name
-            loc = user.location.loc_name
-
-            for log in activity_logs:
-                project_name = log.project.project_name
-                projects[project_name]["project"] = project_name
-                projects[project_name]["username"] = username
-                projects[project_name]["department"] = dept
-                projects[project_name]["location"] = loc
-                projects[project_name]["supervisor"] = supervisor
-                projects[project_name]["worked_hours"] += log.hours_worked
-
-            # Convert defaultdict to list of dictionaries
-            logs["projects"] = list(projects.values())
             return JsonResponse(logs)
         else:
             messages.error(request, "Something wrong :(")
@@ -715,7 +771,7 @@ def get_user_project_report(request, pk):
     except:
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
-    
+
 
 @api_view(['GET'])
 @ensure_csrf_cookie
@@ -726,42 +782,15 @@ def get_user_leave_report(request, pk):
         month = request.GET.get("month")
         year = request.GET.get("year")
         user_id = int(pk)
-        order_start = date.today()
-        order_end = date.today()
 
         if month and year and user_id:
-            if month == "all":
-                order_start = date(int(year), 1, 1)
-                order_end = date(int(year), 12, 31)
-            else:
-                order_start = date(int(year), int(month), 1)
-                if month == "12":
-                    last_month_day = date(int(year) + 1, 1, 1) - order_start
-                else:
-                    last_month_day = date(int(year), int(month) + 1, 1) - order_start
-                order_end = date(int(year), int(month), last_month_day.days)
-            leaves = []
-            logs = {"leaves": []}
-            leaves_queryset = Leave.objects.filter(
-                from_user_id=user_id,
-                start_date__lte=order_end,  # Leave starts before or on order_end
-                end_date__gte=order_start  # Leave ends after or on order_start
+            start_date, end_date = get_start_end_date(month, year)
+
+            users = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False,
             )
-
-            for log in leaves_queryset:
-                leave_data = {
-                    "from": log.from_user.username if log.from_user else None,
-                    "to": log.to_user.username if log.to_user else None,
-                    "start_date": log.start_date.strftime(r"%Y-%m-%d"),
-                    "end_date": log.end_date.strftime(r"%Y-%m-%d"),
-                    "days": log.v_days,
-                    "actual_days": log.days,
-                    "type": log.leave_type,
-                    "respond": "reject" if log.is_rejected else "accept" if log.is_approved else "pending"
-                }
-                leaves.append(leave_data)
-
-            logs["leaves"] = leaves
+            logs = prepare_report_leaves(users, start_date, end_date)
             return JsonResponse(logs)
         else:
             messages.error(request, "Invalid request")
@@ -769,6 +798,633 @@ def get_user_leave_report(request, pk):
     except Exception as e:
         messages.error(request, "Something went wrong")
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user_overview_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = int(pk)
+        project_id = request.GET.get("project")
+
+        if month and year and user_id and project_id:
+            start_date, end_date = get_start_end_date(month, year)
+
+            user = CustomUser.objects.filter(id=user_id, is_superuser=False)
+            total_hours:int = 0
+            users_count = 1
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            hours_leave_days = calculate_leave_days(user, start_date, end_date)
+            hours_leave_days_percentage = 0
+            if total_hours > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours
+
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            total_hours -= hours_pub_holiday
+
+            project_data, total_worked_hours = prepare_report_expected_projects_workes(user, project_id, total_hours, start_date, end_date)
+            total_worked_hours = float(total_worked_hours)
+            percent_complete = 0
+            if total_hours > 0:
+                percent_complete = (total_worked_hours*100) / total_hours
+            missed_hours = total_hours - total_worked_hours
+
+            filtered_data = {
+                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "projects": [],
+                "all": {
+                    "expected_hours": total_hours,
+                    "missed_hours" : missed_hours,
+                    "total_worked_hours": total_worked_hours,
+                    "hours_pub_holiday": hours_pub_holiday,
+                    "hours_leave_days": hours_leave_days,
+                    "percent_complete": percent_complete,
+                }
+            }
+
+            for project_name, data in project_data.items():
+                project_info = {
+                    "name": project_name,
+                    "total": data["total"],
+                    "percentage": data["percentage"],
+                }
+                filtered_data["projects"].append(project_info)
+
+            filtered_data["projects"].append({
+                "name": "Leaves",
+                "total": hours_leave_days,
+                "percentage": hours_leave_days_percentage
+            })
+
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user_pro_act_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = int(pk)
+
+        if month and year and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+
+            users = CustomUser.objects.filter(id=user_id, is_superuser=False)
+            total_hours:int = 0
+            users_count = 1
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            project_activities, project_percentages, activity_percentages =\
+                  prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
+
+            filtered_data = {"report": []}
+
+            # Append project and activity to filtered data
+            for project_name, activities in project_activities.items():
+                for activity_name, hours_worked in activities.items():
+                    project_info = {
+                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+
+##########################################################################
+#    __  ___                               ___                    __     #
+#   /  |/  /__ ____  ___ ____ ____ ____   / _ \___ ___  ___  ____/ /____ #
+#  / /|_/ / _ `/ _ \/ _ `/ _ `/ -_) __/  / , _/ -_) _ \/ _ \/ __/ __(_-< #
+# /_/  /_/\_,_/_//_/\_,_/\_, /\__/_/    /_/|_|\__/ .__/\___/_/  \__/___/ #
+#                       /___/                   /_/                      #
+##########################################################################
+
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_activity_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        manager_id = int(pk)
+
+        if month and year and manager_id and project_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+            manager = CustomUser.objects.get(id=manager_id)
+            users = CustomUser.objects.filter(
+                    is_superuser = False,
+                    department=manager.department.id,
+                    location=manager.location.id,
+                    is_admin=False
+                )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+            logs = prepare_report_activity_logs(users, project_id, start_date, end_date)
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_project_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        manager_id = int(pk)
+
+        if month and year and manager_id and project_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+
+            manager = CustomUser.objects.get(id=manager_id)
+
+            users = CustomUser.objects.filter(
+                    is_superuser = False,
+                    department=manager.department.id,
+                    location=manager.location.id,
+                    is_admin=False
+                )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+            logs = prepare_report_projects(users, project_id, start_date, end_date)
+
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_leave_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        manager_id = int(pk)
+
+        if month and year and manager_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+            manager = CustomUser.objects.get(id=manager_id)
+
+            users = CustomUser.objects.filter(
+                    is_superuser = False,
+                    department=manager.department.id,
+                    location=manager.location.id,
+                    is_admin=False
+                )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+            logs = prepare_report_leaves(users, start_date, end_date)
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Invalid request")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except Exception as e:
+        messages.error(request, "Something went wrong")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_overview_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        manager_id = int(pk)
+
+        if month and year and manager_id and project_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+
+            manager = CustomUser.objects.get(id=manager_id)
+
+            users = CustomUser.objects.filter(
+                    is_superuser = False,
+                    department=manager.department.id,
+                    location=manager.location.id,
+                    is_admin=False
+                )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            
+            total_hours:int = 0
+            users_count = len(users)
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            hours_leave_days = calculate_leave_days(users, start_date, end_date)
+            hours_leave_days_percentage = 0
+            if total_hours > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours
+
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            total_hours -= hours_pub_holiday
+
+            project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
+            total_worked_hours = float(total_worked_hours)
+            percent_complete = 0
+            if total_hours > 0:
+                percent_complete = (total_worked_hours*100) / total_hours
+            missed_hours = total_hours - total_worked_hours
+
+            filtered_data = {
+                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "projects": [],
+                "all": {
+                    "expected_hours": total_hours,
+                    "missed_hours" : missed_hours,
+                    "total_worked_hours": total_worked_hours,
+                    "hours_pub_holiday": hours_pub_holiday,
+                    "hours_leave_days": hours_leave_days,
+                    "percent_complete": percent_complete,
+                }
+            }
+
+            for project_name, data in project_data.items():
+                project_info = {
+                    "name": project_name,
+                    "total": data["total"],
+                    "percentage": data["percentage"],
+                }
+                filtered_data["projects"].append(project_info)
+
+            filtered_data["projects"].append({
+                "name": "Leaves",
+                "total": hours_leave_days,
+                "percentage": hours_leave_days_percentage
+            })
+
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_pro_act_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        manager_id = int(pk)
+
+        if month and year and manager_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+            manager = CustomUser.objects.get(id=manager_id)
+            users = CustomUser.objects.filter(
+                    is_superuser = False,
+                    department=manager.department.id,
+                    location=manager.location.id,
+                    is_admin=False
+                )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+            total_hours:int = 0
+            users_count = len(users)
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            project_activities, project_percentages, activity_percentages =\
+                  prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
+
+            filtered_data = {"report": []}
+
+            # Append project and activity to filtered data
+            for project_name, activities in project_activities.items():
+                for activity_name, hours_worked in activities.items():
+                    project_info = {
+                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
     
 
 
+###############################################################
+#    ___     __      _          ___                    __     #
+#   / _ |___/ /_ _  (_)__      / _ \___ ___  ___  ____/ /____ #
+#  / __ / _  /  ' \/ / _ \    / , _/ -_) _ \/ _ \/ __/ __(_-< #
+# /_/ |_\_,_/_/_/_/_/_//_/   /_/|_|\__/ .__/\___/_/  \__/___/ #
+#                                    /_/                      #
+###############################################################
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_activity_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and project_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            users = CustomUser.objects.filter(is_superuser=False)
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+            logs = prepare_report_activity_logs(users, project_id, start_date, end_date)
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_project_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and project_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            users = CustomUser.objects.filter(is_superuser=False)
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+            logs = prepare_report_projects(users, project_id, start_date, end_date)
+
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_leave_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            users = CustomUser.objects.filter(is_superuser=False)
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+            logs = prepare_report_leaves(users, start_date, end_date)
+            return JsonResponse(logs)
+        else:
+            messages.error(request, "Invalid request")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except Exception as e:
+        messages.error(request, "Something went wrong")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_overview_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        project_id = request.GET.get("project")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and project_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            users = CustomUser.objects.filter(is_superuser=False)
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+            
+            total_hours:int = 0
+            users_count = len(users)
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            hours_leave_days = calculate_leave_days(users, start_date, end_date)
+            hours_leave_days_percentage = 0
+            if total_hours > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours
+
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            total_hours -= hours_pub_holiday
+
+            project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
+            total_worked_hours = float(total_worked_hours)
+            percent_complete = 0
+            if total_hours > 0:
+                percent_complete = (total_worked_hours*100) / total_hours
+            missed_hours = total_hours - total_worked_hours
+
+            filtered_data = {
+                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "projects": [],
+                "all": {
+                    "expected_hours": total_hours,
+                    "missed_hours" : missed_hours,
+                    "total_worked_hours": total_worked_hours,
+                    "hours_pub_holiday": hours_pub_holiday,
+                    "hours_leave_days": hours_leave_days,
+                    "percent_complete": percent_complete,
+                }
+            }
+
+            for project_name, data in project_data.items():
+                project_info = {
+                    "name": project_name,
+                    "total": data["total"],
+                    "percentage": data["percentage"],
+                }
+                filtered_data["projects"].append(project_info)
+
+            filtered_data["projects"].append({
+                "name": "Leaves",
+                "total": hours_leave_days,
+                "percentage": hours_leave_days_percentage
+            })
+
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_pro_act_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            users = CustomUser.objects.filter(is_superuser=False)
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+            total_hours:int = 0
+            users_count = len(users)
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * users_count
+
+            project_activities, project_percentages, activity_percentages =\
+                  prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
+
+            filtered_data = {"report": []}
+
+            # Append project and activity to filtered data
+            for project_name, activities in project_activities.items():
+                for activity_name, hours_worked in activities.items():
+                    project_info = {
+                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_holiday_report(request):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        if month and year:
+            start_date, end_date = get_start_end_date(month, year)
+
+            _holidays = Holiday.objects.filter(
+                holiday_date__range = [start_date, end_date]
+            )
+
+            filtered_data = {"report": []}
+            for holiday in _holidays:
+                holiday_name = holiday.holiday_name
+                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%Y-%m-%d")})
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
