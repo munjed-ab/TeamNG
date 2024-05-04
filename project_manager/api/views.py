@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -106,17 +106,15 @@ def get_activity_logs(user_id: int, project_id: int, order_start: date, order_en
         return ActivityLogs.objects.filter(user=user_id, date__range=[order_start, order_end], project=project_id)
 
 
-def calculate_public_holidays(order_start: date, order_end: date, users_count: int)-> int:
+def calculate_public_holidays(order_start: date, order_end: date, users_count: int):
     """
-    Purpose: Calculates the total number of public holiday hours within a time period.
-    Parameters:
-        order_start: The start date of the time period.
-        order_end: The end date of the time period.
-        users_count: The number of users affected.
-    Returns: The total number of public holiday hours.
+    Calculate the total number of public holiday hours within a time period.
     """
-    pub_holidays = Holiday.objects.filter(holiday_date__range=[order_start, order_end])
-    hours_pub_holiday = len(pub_holidays) * 8 * users_count
+    pub_holidays = Holiday.objects.filter(
+        holiday_date__range=[order_start, order_end]
+    ).count()
+
+    hours_pub_holiday = pub_holidays * 8 * users_count
     return hours_pub_holiday
 
 
@@ -144,44 +142,49 @@ def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: 
             hours_leave_days += len(filtered_dates) * 8
     return hours_leave_days
 
-def calculate_project_and_activity_data(users: list[CustomUser], project_id: int, date_start: date, date_end: date):
-    """
-    Purpose: Calculates project and activity data for a given set of users within a time period.
-    Parameters:
-        users: QuerySet of users.
-        project_id: The ID of the project. Use "all" to include all projects.
-        order_start: The start date of the time period.
-        order_end: The end date of the time period.
-    Returns: A tuple containing project data, activity data, and the total worked hours.
-    """
+
+def calculate_project_and_activity_data(users, project_id, date_start, date_end):
+
     project_data = defaultdict(lambda: {'total': 0, 'percentage': 0, 'activity_logs': []})
     activity_type_data = defaultdict(lambda: {'total': 0, 'percentage': 0, 'activity_logs': []})
     total_worked_hours = 0
-    for user in users:
-        activity_logs = get_activity_logs(user.id, project_id, date_start, date_end)
-        for activity_log in activity_logs:
-            project_name = activity_log.project.project_name
-            project_data[project_name]['total'] += activity_log.hours_worked
-            total_worked_hours += activity_log.hours_worked
-            project_data[project_name]['activity_logs'].append({
-                'date': activity_log.date.strftime(f'%Y-%m-%d'),
-                'hours_worked': activity_log.hours_worked,
-                'details': activity_log.details,
-                'activity': activity_log.activity.activity_name,
-                'time_added': activity_log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
-                "user": user.username
-            })
-            activity_type_name = activity_log.activity.activity_name
-            activity_type_data[activity_type_name]['total'] += activity_log.hours_worked
-            activity_type_data[activity_type_name]['activity_logs'].append({
-                'date': activity_log.date.strftime(f'%Y-%m-%d'),
-                'hours_worked': activity_log.hours_worked,
-                'details': activity_log.details,
-                'project': activity_log.project.project_name,
-                'time_added': activity_log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
-                "user": user.username
-            })
+    
+    # get all activity logs for the specified users, project, and date range
+    activity_logs = ActivityLogs.objects.filter(
+        Q(user__in=users),
+        Q(project=project_id) if project_id != "all" else Q(),
+        date__range=[date_start, date_end]
+    ).select_related('project', 'activity', 'user')
+    
+    # loop over the fetched logs and populate project_data and activity_type_data dictionaries
+    for activity_log in activity_logs:
+        project_name = activity_log.project.project_name
+        activity_type_name = activity_log.activity.activity_name
+        user_username = activity_log.user.username
+        
+        project_data[project_name]['total'] += activity_log.hours_worked
+        project_data[project_name]['activity_logs'].append({
+            'date': activity_log.date.strftime('%Y-%m-%d'),
+            'hours_worked': activity_log.hours_worked,
+            'details': activity_log.details,
+            'activity': activity_type_name,
+            'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'user': user_username
+        })
+        
+        activity_type_data[activity_type_name]['total'] += activity_log.hours_worked
+        activity_type_data[activity_type_name]['activity_logs'].append({
+            'date': activity_log.date.strftime('%Y-%m-%d'),
+            'hours_worked': activity_log.hours_worked,
+            'details': activity_log.details,
+            'project': project_name,
+            'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'user': user_username
+        })
+        total_worked_hours += activity_log.hours_worked
+    
     return project_data, activity_type_data, total_worked_hours
+
 
 def prepare_response_data(project_data:dict, activity_type_data:dict, total_hours:int, total_worked_hours:float, missed_hours:float, hours_leave_days:int, hours_pub_holiday:int) -> dict:
     """
@@ -236,38 +239,48 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
     return filtered_data
 
 
-def getUserSupervisor(user: CustomUser) -> str:
-    users = CustomUser.objects.filter(
-        is_superuser=False
-    )
-    for sup in users:
-        if not (user.is_admin or user.is_manager):
-            if sup.location == user.location and sup.department == user.department and sup.is_manager:
-                return str(sup.get_full_name())
-        elif user.is_manager:
-            if sup.location == user.location and sup.department == user.department and sup.is_admin:
-                return str(sup.get_full_name())
-        elif user.is_admin:
-            return ""
+def getUserSupervisor(user):
+    if user.is_admin:
+        return ""
+    
+    # discover the filter conditions based on the user's role
+    filter_conditions = Q(location=user.location, department=user.department)
+    if user.is_manager:
+        filter_conditions &= Q(is_admin=True)
+    else:
+        filter_conditions &= Q(is_manager=True)
+    
+    # query deez database to find the supervisor
+    supervisor = CustomUser.objects.filter(filter_conditions).first()
+    return str(supervisor.get_full_name()) if supervisor else ""
 
 
-def prepare_report_activity_logs(users: list[CustomUser], project_id: int, start_date: date, end_date:date)-> dict:
-    logs = {"activity_logs":[]}
-    for user in users:
-        activity_logs = get_activity_logs(user.id, project_id, start_date, end_date)
-        for log in activity_logs:
-            project_name = log.project.project_name
-            logs["activity_logs"].append({
-                'time_added':log.updated.strftime(f'%Y-%m-%d [%H:%M:%S]'),
-                'username': log.user.username,
-                'project': project_name,
-                'activity':log.activity.activity_name,
-                'department':log.user.department.dept_name,
-                'date':log.date.strftime(f'%Y-%m-%d'),
-                "hours_worked":Decimal(log.hours_worked),
-                "details":log.details,
-            })
+def prepare_report_activity_logs(users, project_id, start_date, end_date):
+    logs = {"activity_logs": []}
+
+    # gettin all activity logs for the specified users and project within the date range
+    activity_logs = ActivityLogs.objects.filter(
+        Q(user__in=users),
+        Q(project=project_id) if project_id != "all" else Q(),
+        date__range=[start_date, end_date]
+    ).select_related('project', 'activity', 'user__department')
+
+    # loop over the fetched logs and prepare the response data
+    for log in activity_logs:
+        project_name = log.project.project_name
+        logs["activity_logs"].append({
+            'time_added': log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'username': log.user.username,
+            'project': project_name,
+            'activity': log.activity.activity_name,
+            'department': log.user.department.dept_name,
+            'date': log.date.strftime('%Y-%m-%d'),
+            "hours_worked": Decimal(log.hours_worked),
+            "details": log.details,
+        })
+    
     return logs
+
 
 
 def prepare_report_projects(users: list[CustomUser], project_id: int, start_date: date, end_date: date)-> dict:
@@ -293,27 +306,30 @@ def prepare_report_projects(users: list[CustomUser], project_id: int, start_date
     return logs
 
 
-def prepare_report_leaves(users: list[CustomUser], start_date: date, end_date: date)-> dict:
+def prepare_report_leaves(users, start_date, end_date):
     leaves = []
     logs = {"leaves": []}
-    for user in users:
-        leaves_queryset = Leave.objects.filter(
-            from_user=user.id,
-            start_date__lte=end_date,  # Leave starts before or on end_date
-            end_date__gte=start_date  # Leave ends after or on start_date
-        )
-        for log in leaves_queryset:
-            leave_data = {
-                "from": log.from_user.username if log.from_user else None,
-                "to": log.to_user.username if log.to_user else None,
-                "start_date": log.start_date.strftime(r"%Y-%m-%d"),
-                "end_date": log.end_date.strftime(r"%Y-%m-%d"),
-                "days": log.v_days,
-                "actual_days": log.days,
-                "type": log.leave_type,
-                "respond": "reject" if log.is_rejected else "accept" if log.is_approved else "pending"
-            }
-            leaves.append(leave_data)
+    
+    # fetch deez leave records for the specified users and time period where it\'s in users
+    leaves_queryset = Leave.objects.filter(
+        from_user__in=users,
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    )
+    
+    # Iterate through leave records to prepare leave data
+    for log in leaves_queryset:
+        leave_data = {
+            "from": log.from_user.username if log.from_user else None,
+            "to": log.to_user.username if log.to_user else None,
+            "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+            "end_date": log.end_date.strftime(r"%Y-%m-%d"),
+            "days": log.v_days,
+            "actual_days": log.days,
+            "type": log.leave_type,
+            "respond": "reject" if log.is_rejected else "accept" if log.is_approved else "pending"
+        }
+        leaves.append(leave_data)
 
     logs["leaves"] = leaves
     return logs
@@ -395,20 +411,19 @@ def calendar_data_view(request):
             year = int(request.GET.get("year"))
             month = int(request.GET.get("month"))
 
-                # Get the start and end dates of the requested month
             start_date, end_date = get_firstday_lastday_specific_month(year, month)
 
-            # Retrieve activity logs for the requested month
+            # get activity logs for the requested month
             activity_logs = ActivityLogs.objects.filter(
                 user=request.user,
                 date__range=[start_date, end_date]
             ).annotate(day=F('date')).values('day').annotate(total_hours=Sum('hours_worked')).order_by("day")
 
-            # Create a dictionary to store data for each day of the month
+            # make a dictionary to store data for each day of the month
             all_month_days = {
                 str(start_date + timedelta(days=i)): 0 for i in range((end_date - start_date).days + 1)
             }
-            # Update the dictionary with total hours worked for each day from activity logs
+            # update deez dictionary with total hours worked for each day from activity logs
             all_month_days.update({
                 str(log['day']): log['total_hours'] for log in activity_logs
             })
@@ -573,8 +588,6 @@ def post_activity_data(request):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def overview_data(request):
     try:
         month = request.GET.get("month")
@@ -592,11 +605,12 @@ def overview_data(request):
             if department_id != "all":
                 users = users.filter(department=department_id)
 
+            user_count = users.count()
 
-            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * len(users)
+            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * user_count
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, user_count)
             total_hours -= hours_pub_holiday
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
@@ -614,9 +628,6 @@ def overview_data(request):
 
 
 @api_view(['GET'])
-@ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def overview_manager_data(request):
     try:
         month = request.GET.get("month")
@@ -659,9 +670,6 @@ def overview_manager_data(request):
 
 
 @api_view(['GET'])
-@ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def overview_user_data(request, pk):
     try:
         month = request.GET.get("month")
@@ -673,14 +681,12 @@ def overview_user_data(request, pk):
             start_date, end_date = get_start_end_date(month, year)
 
             users = CustomUser.objects.filter(
-                    id = user_id,
-                    is_superuser = False,
+                    id = user_id
                 )
-            users_count = 1
             total_hours = 8 * len(get_filtered_dates(start_date, end_date))
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, 1)
             total_hours -= hours_pub_holiday
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
@@ -899,7 +905,7 @@ def get_user_pro_act_report(request, pk):
 
             filtered_data = {"report": []}
 
-            # Append project and activity to filtered data
+            # append project and activity to filtered data
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {
@@ -930,8 +936,6 @@ def get_user_pro_act_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def get_manager_activity_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1119,8 +1123,6 @@ def get_manager_overview_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def get_manager_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1152,7 +1154,7 @@ def get_manager_pro_act_report(request, pk):
 
             filtered_data = {"report": []}
 
-            # Append project and activity to filtered data
+            # append project and activity to filtered data
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {
@@ -1182,8 +1184,6 @@ def get_manager_pro_act_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def get_admin_activity_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1354,8 +1354,6 @@ def get_admin_overview_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
-@authentication_classes([SessionAuthentication, BasicAuthentication])
-@permission_classes([IsAuthenticated])
 def get_admin_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1384,7 +1382,7 @@ def get_admin_pro_act_report(request, pk):
 
             filtered_data = {"report": []}
 
-            # Append project and activity to filtered data
+            # append project and activity to filtered data
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {

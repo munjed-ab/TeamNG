@@ -891,8 +891,8 @@ def report_user_pro_act(request, pk):
         return redirect("login")
 
     user = CustomUser.objects.get(id=pk)
-    projects_count = Project.objects.all().count()
-    activities_count = Activity.objects.all().count()
+    projects_count = Project.objects.count()
+    activities_count = Activity.objects.count()
 
     context = {
         "user" : user,

@@ -7,7 +7,7 @@ from django.db import transaction
 from .forms import CustomUserForm, CustomUserUpdateForm, ProjectForm, ActivityForm, DepartmentForm, LocationForm, HolidayForm
 from django.core.exceptions import ValidationError
 from .tasks import send_signup_email
-
+from .api.views import getUserSupervisor
 
 #########################################################################
 #              _           _          _____            _             _  #
@@ -45,18 +45,7 @@ def users(request):
         _user["email"] = str(user.email)
         _user["is_manager"] = str(user.is_manager)
         _user["is_admin"] = str(user.is_admin)
-        for sup in users:
-            if not (user.is_admin or user.is_manager):
-                if sup.location == user.location and sup.department == user.department and sup.is_manager:
-                    _user["super"] = str(sup.get_full_name())
-                    break
-            elif user.is_manager:
-                if sup.location == user.location and sup.department == user.department and sup.is_admin:
-                    _user["super"] = str(sup.get_full_name())
-                    break
-            elif user.is_admin:
-                _user["super"] = ""
-                break
+        _user["super"] = getUserSupervisor(user)
         _users.append(_user)
 
     context = {
