@@ -1,11 +1,12 @@
 from django.test import TestCase
 from django.urls import reverse
-from project_manager.models import CustomUser, Department, Project, ActivityLogs, Activity
+from project_manager.models import CustomUser, Department, Project, ActivityLogs, Activity, Leave
 import json
+from django.test.client import RequestFactory
 
 class OverviewDataTests(TestCase):
     def setUp(self):
-        self.user = CustomUser.objects.create(username='test_user')
+        self.user = CustomUser.objects.create_user(username='test_user', password='123123@3qe3', email = 'toto@snso.cc')
         self.dept = Department.objects.create(dept_name='test_department')
         self.pro = Project.objects.create(project_name='test_pro')
         self.act = Activity.objects.create(activity_name='test_activity')

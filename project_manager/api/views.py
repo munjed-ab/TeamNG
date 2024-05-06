@@ -257,7 +257,7 @@ def getUserSupervisor(user):
 
 def prepare_report_activity_logs(users, project_id, start_date, end_date):
     logs = {"activity_logs": []}
-
+ 
     # gettin all activity logs for the specified users and project within the date range
     activity_logs = ActivityLogs.objects.filter(
         Q(user__in=users),
@@ -595,7 +595,10 @@ def overview_data(request):
         user_id = request.GET.get("user")
         department_id = request.GET.get("department")
         project_id = request.GET.get("project")
-
+        # if not request.user.is_admin:
+        #     messages.error(request, "Access Denied")
+        #     return JsonResponse({"error": "Access Denied"}, status=400)
+    
         if month and year and user_id and department_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
