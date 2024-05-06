@@ -1,4 +1,14 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
+const currentDate = new Date();
+const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
+
+var month = document.getElementById("month-filter");
+var options = [...month.options];
+options.forEach(function (option) {
+  if (option.value == currentMonth) {
+    option.selected = true;
+  }
+});
 $.ajaxSetup({
   beforeSend: function (xhr, settings) {
     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
