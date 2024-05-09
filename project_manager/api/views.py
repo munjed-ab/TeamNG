@@ -940,6 +940,8 @@ def get_user_pro_act_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_manager_activity_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1127,6 +1129,8 @@ def get_manager_overview_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_manager_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1188,6 +1192,8 @@ def get_manager_pro_act_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_admin_activity_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1358,6 +1364,8 @@ def get_admin_overview_report(request, pk):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_admin_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
