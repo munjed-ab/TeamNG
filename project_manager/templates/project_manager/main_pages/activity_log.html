@@ -21,7 +21,8 @@
       <thead class="table-head-color">
         <tr>
           <th>User</th>
-          <th>Activity</th>
+          <th>Project</th>
+          <th>Activity Type</th>
           <th>Hours</th>
           <th>Details</th>
           <th>Date</th>
@@ -34,7 +35,8 @@
         {% for entry in entry_logs %}
         <tr>
           <td>{{entry.user.username|capfirst}}</td>
-          <td>{{entry.project}}, {{entry.activity}}</td>
+          <td>{{entry.project}}</td>
+          <td>{{entry.activity}}</td>
           <td>{{entry.hours_worked|floatformat}}h</td>
           <td>{{entry.details}}</td>
           <td>{{entry.date|date:"Y-m-d"}}</td>

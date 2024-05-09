@@ -346,14 +346,15 @@ def prepare_report_expected_projects_workes(users: list[CustomUser], project_id:
             project_data[project_name]['total'] += activity_log.hours_worked
             total_worked_hours+=activity_log.hours_worked
 
-        projects:Project
-        if project_id == "all":
-            projects = Project.objects.all()
-        else:
-            projects = Project.objects.filter(id=int(project_id))
+    projects:Project
+    if project_id == "all":
+        projects = Project.objects.all()
+    else:
+        projects = Project.objects.filter(id=int(project_id))
 
-        for project in projects:
-            project_data[project.project_name]['percentage'] = project_data[project.project_name]['total']*100 / total_hours
+    for project in projects:
+        project_data[project.project_name]['percentage'] = (project_data[project.project_name]['total']*100 / total_hours)\
+                if total_hours > 0 else 0
 
     return project_data, total_worked_hours
 
@@ -386,8 +387,8 @@ def prepare_report_pro_act_percentages(users: list[CustomUser], total_hours, dat
             project_activities[project_name][activity_name] += hours_worked
 
     # Calculate percentages
-    project_percentages = {project_name: (hours / total_hours) * 100 for project_name, hours in project_totals.items()}
-    activity_percentages = {activity_name: (hours / total_hours) * 100 for activity_name, hours in activity_totals.items()}
+    project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
+    activity_percentages = {activity_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for activity_name, hours in activity_totals.items()}
     return project_activities, project_percentages, activity_percentages
 
 
@@ -598,7 +599,7 @@ def overview_data(request):
         # if not request.user.is_admin:
         #     messages.error(request, "Access Denied")
         #     return JsonResponse({"error": "Access Denied"}, status=400)
-    
+
         if month and year and user_id and department_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
@@ -606,7 +607,7 @@ def overview_data(request):
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
-                users = users.filter(department=department_id)
+                users = users.filter(department=int(department_id))
 
             user_count = users.count()
 
