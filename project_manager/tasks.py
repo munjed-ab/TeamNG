@@ -1,5 +1,5 @@
 from celery import shared_task, chain, group
-from django.contrib.auth import get_user_model
+from .models import CustomUser
 from email.message import EmailMessage
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
@@ -13,14 +13,14 @@ import os
 @shared_task(bind=True, max_retries=2)
 def send_signup_email(self, email_to):
     try:
-        user = get_user_model().objects.get(email=email_to)
+        user = CustomUser.objects.get(email=email_to)
         subject = 'Welcome to Team Information'
         user_name = user.username
         domain = 'www.teaminformation.com'
         html_template = 'project_manager/emails/sign_up_email.html'
         
         # Encode the image file
-        image_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'email_logo.jpg')
+        image_path = '/var/www/http/static/img/email_logo.jpg'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -48,13 +48,13 @@ def send_signup_email(self, email_to):
 @shared_task(bind=True, max_retries=2)
 def send_notification_email(self, email_to, respond, producer):
     try:
-        user = get_user_model().objects.get(email=email_to)
+        user = CustomUser.objects.get(email=email_to)
         subject = 'You have notifications'
         user_name = user.username
         domain = 'www.teaminformation.com'
         html_template = 'project_manager/emails/notification_email.html'
         
-        image_path = os.path.join(settings.BASE_DIR, 'static', 'img', 'email_logo.jpg')
+        image_path = '/var/www/http/static/img/email_logo.jpg'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 

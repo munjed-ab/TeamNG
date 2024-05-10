@@ -1,13 +1,16 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
+from django.core.files.storage import FileSystemStorage
 import os
 from django.conf import settings
 
-def get_upload_path(instance, filename):
-    path = os.path.join(settings.MEDIA_ROOT, 'uploads', str(instance.id), filename)
-    print(f"Upload path: {path}")
-    return path
+image_storage = FileSystemStorage(location='/var/www/http/media')
+
+def custom_upload_path(instance, filename):
+    # Define your absolute path here
+    absolute_path = "/var/www/http/media"
+    return f"{absolute_path}/{filename}"
 
 class Department(models.Model):
     dept_name = models.CharField(max_length=500)
@@ -88,7 +91,7 @@ class CustomUser(AbstractUser):
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    profile_img = models.ImageField(default='user_def.png', upload_to=get_upload_path)
+    profile_img = models.ImageField(default='user_def.png', storage=image_storage)
 
     def __str__(self):
         return f'{self.user.username} Profile'

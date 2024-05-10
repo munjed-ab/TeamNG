@@ -76,7 +76,11 @@ def create_new_user(request):
                 user.save()
                 messages.success(request,
                 "User has been created successfully.")
-                send_signup_email.delay(user.email)
+                try:
+                    send_signup_email.delay(user.email)
+                except:
+                    messages.success(request,
+                    "Couldn't send the email ):")
                 return redirect('users')  # Redirect to a success page
             else:
                 messages.error(request,
