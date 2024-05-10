@@ -1,0 +1,2 @@
+Requirement already satisfied: gunicorn in ./venv/lib/python3.12/site-packages (21.2.0)
+Requirement already satisfied: packaging in ./venv/lib/python3.12/site-packages (from gunicorn) (24.0)
