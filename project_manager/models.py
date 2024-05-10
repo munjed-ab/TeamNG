@@ -151,8 +151,7 @@ class ActivityLogs(models.Model):
     hours_worked = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-    #set to blank=True in production
-    details = models.TextField(null=True)
+    details = models.TextField(blank=True)
 
     class Meta:
         ordering = ["-updated", "-created"]
