@@ -1,7 +1,13 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
-import numpy as np
+import os
+from django.conf import settings
+
+def get_upload_path(instance, filename):
+    path = os.path.join(settings.MEDIA_ROOT, 'uploads', str(instance.id), filename)
+    print(f"Upload path: {path}")
+    return path
 
 class Department(models.Model):
     dept_name = models.CharField(max_length=500)
@@ -82,7 +88,7 @@ class CustomUser(AbstractUser):
 
 class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    profile_img = models.ImageField(default='user_def.png', upload_to='profile_imgs')
+    profile_img = models.ImageField(default='user_def.png', upload_to=get_upload_path)
 
     def __str__(self):
         return f'{self.user.username} Profile'

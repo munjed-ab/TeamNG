@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = os.environ.get("DEBUG") == "True"
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '134.122.90.65']
 
 AUTH_USER_MODEL = 'project_manager.CustomUser'
 
@@ -70,7 +70,7 @@ WSGI_APPLICATION = 'T.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': 'team',
         'USER': os.environ['DB_USER'],
         'PASSWORD': os.environ['DB_PASS'],
         'HOST': os.environ['DB_HOST'],
@@ -103,12 +103,13 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS =[
-    BASE_DIR / 'static',
-]
-STATIC_ROOT = BASE_DIR.parent / 'static'
+#STATICFILES_DIRS =[
+#    BASE_DIR / 'staticfiles',
+#]
+STATIC_ROOT = "/var/www/http/static" 
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT ="/var/www/http/media"
+
 MEDIA_URL = 'media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
