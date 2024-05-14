@@ -35,6 +35,12 @@ class Location(models.Model):
     def __str__(self):
         return str(self.loc_name[:50])
 
+class Role(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name[:50]
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """
@@ -81,6 +87,7 @@ class CustomUser(AbstractUser):
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING, null=True)
     disabled = models.BooleanField(default = False)
     ov = models.BooleanField(default = False)
+    role = models.ForeignKey(Role, on_delete=models.DO_NOTHING, null=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 

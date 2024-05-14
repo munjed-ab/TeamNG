@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import CustomUser, Project, Activity, Holiday, Department, Location
+from .models import CustomUser, Project, Activity, Holiday, Department, Location, Role
 from datetime import *
+from django.db.models import F, Sum, Q
 from django.contrib import messages
 from django.db import transaction
 from .forms import CustomUserForm, CustomUserUpdateForm, ProjectForm, ActivityForm, DepartmentForm, LocationForm, HolidayForm
@@ -27,11 +28,11 @@ def users(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     users = CustomUser.objects.filter(
-        is_superuser = False
+        is_superuser = False,
     ).order_by("username")
 
     _users = []
@@ -43,8 +44,7 @@ def users(request):
         _user["first_name"] = str(user.first_name)
         _user["last_name"] = str(user.last_name)
         _user["email"] = str(user.email)
-        _user["is_manager"] = str(user.is_manager)
-        _user["is_admin"] = str(user.is_admin)
+        _user["role"] = str(user.role)
         _user["super"] = getUserSupervisor(user)
         _users.append(_user)
 
@@ -62,7 +62,7 @@ def create_new_user(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = CustomUserForm()
@@ -76,11 +76,7 @@ def create_new_user(request):
                 user.save()
                 messages.success(request,
                 "User has been created successfully.")
-                try:
-                    send_signup_email.delay(user.email)
-                except:
-                    messages.success(request,
-                    "Couldn't send the email ):")
+                send_signup_email.delay(user.email)
                 return redirect('users')  # Redirect to a success page
             else:
                 messages.error(request,
@@ -103,10 +99,12 @@ def edit_user(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
-    user = CustomUser.objects.get(id=pk)
+    user = CustomUser.objects.get(
+        id=int(pk)
+    )
     form = CustomUserUpdateForm(instance=user)
 
     if request.method == 'POST':
@@ -121,11 +119,10 @@ def edit_user(request, pk):
                 user.first_name = cleaned_data['first_name']
                 user.last_name = cleaned_data['last_name']
                 user.email = cleaned_data['email']
-                user.is_manager = cleaned_data['is_manager']
-                user.is_admin = cleaned_data['is_admin']
                 user.daily_hours = cleaned_data['daily_hours']
                 user.department = cleaned_data['department']
                 user.location = cleaned_data['location']
+                user.role = cleaned_data['role']
 
                 try:
                     user.full_clean()  # Validate the user object
@@ -151,7 +148,7 @@ def projects(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     projects = Project.objects.all()
@@ -170,7 +167,7 @@ def create_project(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = ProjectForm()
@@ -197,7 +194,7 @@ def edit_project(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     project = Project.objects.get(id=pk)
@@ -222,7 +219,7 @@ def activities(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     activities = Activity.objects.all()
@@ -240,7 +237,7 @@ def create_activity(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = ActivityForm()
@@ -267,7 +264,7 @@ def edit_activity(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     activity = Activity.objects.get(id=pk)
@@ -292,7 +289,7 @@ def departments(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     departments = Department.objects.all()
@@ -310,7 +307,7 @@ def create_dept(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = DepartmentForm()
@@ -337,7 +334,7 @@ def edit_dept(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     dept = Department.objects.get(id=pk)
@@ -362,7 +359,7 @@ def locations(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     locations = Location.objects.all()
@@ -380,7 +377,7 @@ def create_loc(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = LocationForm()
@@ -407,7 +404,7 @@ def edit_loc(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     loc = Location.objects.get(id=pk)
@@ -432,7 +429,7 @@ def holidays(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
     
     holidays = Holiday.objects.all()
@@ -450,7 +447,7 @@ def create_holiday(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     form = HolidayForm()
@@ -483,7 +480,7 @@ def edit_holiday(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_admin:
+    if not request.user.role.name=="Admin":
         redirect("dashboard")
 
     holiday = Holiday.objects.get(id=pk)
@@ -528,12 +525,15 @@ def overview(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.ov:
+    if not (request.user.ov or request.user.role.name == "Admin" or request.user.role.name == "Director"):
         redirect("dashboard")
     
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
+
     departments = Department.objects.all()
     projects = Project.objects.all()
 
@@ -565,14 +565,17 @@ def report_admin_act(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
-    
+
     user = CustomUser.objects.get(id=pk)
+
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -592,14 +595,16 @@ def report_admin_pro(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -620,14 +625,16 @@ def report_admin_leave(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -648,14 +655,16 @@ def report_admin_overview(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -677,14 +686,16 @@ def report_admin_pro_act(request, pk):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
-        is_superuser = False
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
     ).order_by("username")
     departments = Department.objects.all()
     projects_count = Project.objects.all().count()
@@ -707,7 +718,7 @@ def report_holiday(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    elif not request.user.is_admin:
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")

@@ -58,10 +58,12 @@
           <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
           Profile
         </a>
+        {% if request.user.role.name != "Director" %}
         <a class="dropdown-item" href="{% url 'activitylogs' %}">
           <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
           Activity Log
         </a>
+        {% endif %}
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" href="{% url 'logout' %}">
           <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>

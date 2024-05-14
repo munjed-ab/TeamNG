@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
-from .models import CustomUser, Project, Activity
+from .models import CustomUser, Project, Activity, Role
 from django.contrib import messages
-
+from django.db.models import F, Sum, Q
 
 
 #################################################
@@ -28,19 +28,24 @@ def manager_overview(request):
         messages.error(request,f"Sorry. \
         You are banned.")
         return redirect("login")
-    if not request.user.is_manager:
+    if not request.user.role.name=="Manager":
         redirect("dashboard")
 
     manager = request.user
+
     department_id = str(manager.department.id)
     dept_name = str(manager.department.dept_name)
     location_id = str(manager.location.id)
     loc_name = str(manager.location.loc_name)
+
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser = False,
-        is_admin=False,
-        department=manager.department,
-        location=manager.location
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=manager.department.id,
+        location=manager.location.id
     ).order_by("username")
     projects = Project.objects.all()
 
@@ -75,19 +80,23 @@ def report_manager_act(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-    elif not request.user.is_manager:
+    elif not request.user.role.name=="Manager":
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    
     projects = Project.objects.all()
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser=False,
-        is_admin=False,
-        location=user.location.id,
-        department=user.department.id
-    )
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
 
     context = {
         "user" : user,
@@ -103,19 +112,22 @@ def report_manager_pro(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-    elif not request.user.is_manager:
+    elif not request.user.role.name=="Manager":
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser=False,
-        is_admin=False,
-        location=user.location.id,
-        department=user.department.id
-    )
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
 
     context = {
         "user" : user,
@@ -131,18 +143,21 @@ def report_manager_leave(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-    elif not request.user.is_manager:
+    elif not request.user.role.name=="Manager":
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser=False,
-        is_admin=False,
-        location=user.location.id,
-        department=user.department.id
-    )
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
 
     context = {
         "user" : user,
@@ -157,19 +172,22 @@ def report_manager_overview(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-    elif not request.user.is_manager:
+    elif not request.user.role.name=="Manager":
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser=False,
-        is_admin=False,
-        location=user.location.id,
-        department=user.department.id
-    )
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
 
     context = {
         "user" : user,
@@ -185,18 +203,22 @@ def report_manager_pro_act(request, pk):
         messages.error(request,f"Sorry. \
         You are disabled.")
         return redirect("login")
-    elif not request.user.is_manager:
+    elif not request.user.role.name=="Manager":
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
     
     user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
     users = CustomUser.objects.filter(
-        is_superuser=False,
-        is_admin=False,
-        location=user.location.id,
-        department=user.department.id
-    )
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
+    
     projects_count = Project.objects.all().count()
     activities_count = Activity.objects.all().count()
 

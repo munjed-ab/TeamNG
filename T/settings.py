@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = os.environ.get("DEBUG") == "True"
 
-ALLOWED_HOSTS = ['localhost', '134.122.90.65']
+ALLOWED_HOSTS = ['activity.teamnigeria.com.ng', '134.122.90.65']
 
 AUTH_USER_MODEL = 'project_manager.CustomUser'
 

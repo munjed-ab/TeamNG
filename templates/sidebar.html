@@ -8,7 +8,6 @@
   <!-- Sidebar - Brand -->
   <a
     class="sidebar-brand d-flex align-items-center justify-content-center"
-    href="{% url 'dashboard' %}"
   >
     <div class="sidebar-brand-icon rotate-n-10">
       <img id="logo-img" src="{% static 'img/loginlogo.png' %}" />
@@ -17,7 +16,7 @@
 
   <!-- Divider -->
   <hr class="sidebar-divider my-0" />
-  {% if request.user.ov %}
+  {% if request.user.ov or request.user.role.name == "Admin" or request.user.role.name == "Director" %}
   <!-- Nav Item - Overview -->
   <li
     class="nav-item {% if request.path == '/analysis-overview/' %}active{% endif %}"
@@ -27,7 +26,7 @@
       <span>Analysis Overview</span></a
     >
   </li>
-  {% endif %} {% if request.user.is_manager %}
+  {% endif %} {% if request.user.role.name == "Manager" %}
   <!-- Nav Item - Overview -->
   <li
     class="nav-item {% if request.path == '/manager-overview/' %}active{% endif %}"
@@ -38,6 +37,7 @@
     >
   </li>
   {% endif %}
+  {% if request.user.role.name != "Director" %}
   <!-- Nav Item - Dashboard -->
   <li class="nav-item {% if request.path == '/dashboard/' %}active{% endif %}">
     <a class="nav-link" href="{% url 'dashboard' %}">
@@ -86,7 +86,7 @@
       <span>Leave Logs</span>
     </a>
   </li>
-
+{% endif %}
   <li class="nav-item">
     <a
       class="nav-link collapsed"
@@ -105,7 +105,7 @@
       aria-labelledby="headingPages"
       data-parent="#accordionSidebar"
     >
-      {% if request.user.is_manager %}
+      {% if request.user.role.name == "Manager" %}
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Reports:</h6>
         <a
@@ -134,7 +134,7 @@
           >Project/Activity Type</a
         >
       </div>
-      {% elif request.user.is_admin %}
+      {% elif request.user.role.name == "Admin" or request.user.role.name == "Director" %}
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Reports:</h6>
         <a
@@ -164,7 +164,7 @@
           >Project/Activity Type</a
         >
       </div>
-      {% else %}
+      {% elif request.user.role.name == "Employee" %}
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Reports:</h6>
         <a
@@ -197,7 +197,7 @@
     </div>
   </li>
   <!-- Nav Item - Pages Collapse Menu -->
-  {% if request.user.is_admin %}
+  {% if request.user.role.name == "Admin" %}
   <li class="nav-item">
     <a
       class="nav-link collapsed"

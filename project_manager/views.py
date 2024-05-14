@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .models import CustomUser, Project, Activity, Leave, Holiday, ActivityLogs, Profile
+from .models import CustomUser, Project, Activity, Leave, Holiday, ActivityLogs, Profile, Role
 from .forms import ProfileImageForm
 from decimal import Decimal
 from datetime import *
@@ -167,7 +167,10 @@ def login_view(request):
         form = AuthenticationForm(request, request.POST)
         if form.is_valid():
             login(request, form.get_user())
-            return redirect('dashboard')  # Redirect to dashboard or any other page
+            if request.user.role.name == "Director":
+                return redirect('overview')
+            else:
+                return redirect('dashboard')
     else:
         form = AuthenticationForm()
     return render(request, 'project_manager/login.html', {'form': form})
@@ -428,11 +431,20 @@ def addleave(request):
         You are disabled.")
         return redirect("login")
     
+    manager_role = Role.objects.get(name="Manager")
+    admin_role = Role.objects.get(name="Admin")
+
     admins = CustomUser.objects.filter(
-        is_superuser = True
+        Q(role = admin_role.id),
+        Q(is_superuser=False)
     )
 
-    managers = CustomUser.objects.all()
+    managers = CustomUser.objects.filter(
+        role = manager_role.id,
+        location = request.user.location,
+        department = request.user.department,
+        is_superuser=False
+    )
     if request.method == "POST":
         start_date = request.POST.get("startDate")
         end_date = request.POST.get("endDate")
@@ -460,7 +472,7 @@ def addleave(request):
                 "Something went wrong!")
                 return redirect('addleave')
             
-            if request.user.is_admin:
+            if request.user.role.name == "Admin":
                 Leave.objects.create(
                     from_user = request.user,
                     start_date = start_date,
@@ -470,7 +482,7 @@ def addleave(request):
                     leave_type = leave_type,
                     is_approved = True
                 )
-            elif request.user.is_manager:
+            elif request.user.role.name == "Manager":
                 admin_name = request.POST.get("adminName")
                 admin = CustomUser.objects.get(username = admin_name)
                 admin.has_notification = True
@@ -623,13 +635,19 @@ def update_leave(request, pk):
         return redirect("login")
     
     leave = Leave.objects.get(id=pk)
+    admin_role = Role.objects.get(name="Admin")
+    manager_role = Role.objects.get(name="Manager")
+
     admins = CustomUser.objects.filter(
-        is_superuser=True
+        role=admin_role.id,
+        is_superuser=False
     )
 
     managers = CustomUser.objects.filter(
-        is_manager=True,
-        department=request.user.department
+        role=manager_role.id,
+        department=request.user.department,
+        location=request.user.location,
+        is_superuser=False
     )
 
     if request.method == "POST":
@@ -642,9 +660,21 @@ def update_leave(request, pk):
         end_date = request.POST.get("endDate")
         leave_type = request.POST.get("leaveType")
 
-        start_date = datetime.strptime(start_date, f"%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date, f"%Y-%m-%d").date()
-        days = (end_date - start_date).days
+        days = 0 #filtered days
+        v_days = 0 #real days to view it
+        if start_date and end_date:
+            filtered_dates = get_filtered_dates(start_date, end_date)
+            days = len(filtered_dates)
+
+            start_date = datetime.strptime(start_date, f"%Y-%m-%d")
+            start_date = start_date.date()
+            end_date = datetime.strptime(end_date, f"%Y-%m-%d")
+            end_date = end_date.date()
+            v_days = (end_date - start_date).days + 1
+        else:
+            messages.error(request,
+            "Something went wrong!")
+            return redirect('leave_logs')
 
         if checkActivityInLeaveDays(request.user, start_date, end_date):
             messages.error(request,
@@ -653,14 +683,14 @@ def update_leave(request, pk):
         
         try:
             with transaction.atomic():
-                if request.user.is_manager:
+                if request.user.role.name=="Manager":
                     admin_name = request.POST.get("adminName")
                     admin = CustomUser.objects.get(username=admin_name)
                     admin.has_notification = True
                     admin.save()
                     leave.to_user = admin
 
-                elif not request.user.is_manager and not request.user.is_superuser:
+                elif request.user.role.name=="Employee":
                     manager_name = request.POST.get("managerName")
                     manager = CustomUser.objects.get(username=manager_name)
                     manager.has_notification = True
@@ -670,6 +700,7 @@ def update_leave(request, pk):
                 leave.start_date = start_date
                 leave.end_date = end_date
                 leave.days = days
+                leave.v_days = v_days
                 leave.leave_type = leave_type
                 leave.save()
 
@@ -735,7 +766,7 @@ def profile(request, pk):
 def upload_profile_image(request):
     if request.method == 'POST':
         try:
-            # Check if a profile already exists for the user
+            # Checking if a profile already exists for the user
             profile = Profile.objects.get(user=request.user)
             form = ProfileImageForm(request.POST, request.FILES, instance=profile)
             if profile.profile_img: #delete old image from the folder
@@ -749,12 +780,12 @@ def upload_profile_image(request):
             profile = form.save(commit=False)
             profile.user = request.user
 
-            # Open the image using PIL
+            # Opening the image using PIL
             image = Image.open(profile.profile_img)
 
-            # Check if the image is not square
+            # Checking if image is nort square
             if image.width != image.height:
-                # Crop non-square images to make them square
+                # Croping non-square images to make them square
                 min_size = min(image.width, image.height)
                 left = (image.width - min_size) / 2
                 top = (image.height - min_size) / 2
@@ -762,20 +793,20 @@ def upload_profile_image(request):
                 bottom = (image.height + min_size) / 2
                 image = image.crop((left, top, right, bottom))
 
-            # Resize the image to a desired size (e.g., 200x200 pixels)
+            # Resizing the image to a desired size (e.g., 200x200 pixels)
             size = (200, 200)
             image.thumbnail(size)
 
-            # Convert the image to RGB mode (if not already in RGB)
+            # Converting the image to RGB mode (if not already in RGB)
             if image.mode != 'RGB':
                 image = image.convert('RGB')
 
-            # Compress and save the image
+            # Compressing and save the image
             output = BytesIO()
             image.save(output, format='JPEG', quality=80)
             output.seek(0)
 
-            # Create an InMemoryUploadedFile from the compressed image
+            # Creating an InMemoryUploadedFile from the compressed image
             profile.profile_img = InMemoryUploadedFile(
                 output,
                 'ImageField',
@@ -788,7 +819,7 @@ def upload_profile_image(request):
             profile.save()
             return redirect('profile', request.user.id)  # Redirect to profile page after successful upload
     else:
-        # If the request method is not POST, create a new form
+        # If the request method is not POST create a new form
         form = ProfileImageForm()
     
     return render(request, 'project_manager/profile/upload_profile_img.html', {'form': form})

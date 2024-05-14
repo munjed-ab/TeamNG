@@ -2,15 +2,16 @@ from django.forms import ModelForm
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import CustomUser, ActivityLogs
 from django import forms
-from .models import CustomUser, Project, Activity, Department, Location, Holiday, Profile
+from .models import CustomUser, Project, Activity, Department, Location, Holiday, Profile, Role
 from django.core.exceptions import ValidationError
 from PIL import Image
 
 
 class CustomUserForm(UserCreationForm):
+    role = forms.ModelChoiceField(queryset=Role.objects.all())
     class Meta:
         model = CustomUser
-        fields = ['username','first_name','last_name', 'email', 'password1', 'password2', 'is_manager', 'is_admin', 'daily_hours', 'department', 'location', 'disabled','ov']
+        fields = ['username','first_name','last_name', 'email', 'password1', 'password2', 'daily_hours', 'department', 'location', 'disabled','ov', 'role']
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['email'].required = True
@@ -24,9 +25,10 @@ class CustomUserForm(UserCreationForm):
 
 
 class CustomUserUpdateForm(UserChangeForm):
+    role = forms.ModelChoiceField(queryset=Role.objects.all())
     class Meta:
         model = CustomUser
-        fields = ['username','first_name','last_name', 'email', 'is_manager', 'is_admin', 'daily_hours', 'department', 'location', 'disabled', 'ov']
+        fields = ['username','first_name','last_name', 'email', 'daily_hours', 'department', 'location', 'disabled', 'ov', 'role']
     def clean_daily_hours(self):
         daily_hours = self.cleaned_data.get('daily_hours')
         if daily_hours is None or daily_hours <= 5:

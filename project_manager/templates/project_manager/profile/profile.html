@@ -71,19 +71,11 @@
             <p class="card-text text-muted">@{{ user.username }}</p>
           </div>
           <hr class="profile-breaker" />
-          {% if user.is_manager %}
+
           <div class="text-center mt-3">
-            <h5 class="text-success">Manager</h5>
+            <h5 class="text-success">{{user.role.name}}</h5>
           </div>
-          {% elif user.is_admin %}
-          <div class="text-center mt-3">
-            <h5 class="text-success">Admin</h5>
-          </div>
-          {% else %}
-          <div class="text-center mt-3">
-            <h5 class="text-success">Employee</h5>
-          </div>
-          {% endif %}
+
           <br />
           <div class="row">
             <div class="col-md-4">

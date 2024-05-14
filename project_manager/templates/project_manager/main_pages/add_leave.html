@@ -12,9 +12,9 @@
   <div class="container-addleave mt-5">
     <h2>Add Leave</h2>
     <form id="addleave" action="{% url 'addleave' %}" method="POST">
-      {% csrf_token %} {% if request.user.is_superuser %}
+      {% csrf_token %} {% if request.user.role.name == "Admin" %}
       <br />
-      {% elif request.user.is_manager %}
+      {% elif request.user.role.name == "Manager" %}
       <div class="mb-3">
         <label for="from" class="form-label">Admin</label>
         <select class="form-select" id="adminName" name="adminName" required>
@@ -23,7 +23,7 @@
           {% endfor %}
         </select>
       </div>
-      {% else %}
+      {% elif request.user.role.name == "Employee" %}
       <div class="mb-3">
         <label for="from" class="form-label">Manager</label>
         <select

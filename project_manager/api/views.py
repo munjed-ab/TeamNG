@@ -7,6 +7,7 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework.permissions import IsAuthenticated
 from datetime import date, timedelta
 from project_manager.models import ActivityLogs, Holiday, Leave, Project, Activity, CustomUser
+from ..models import Role
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.contrib import messages
@@ -238,17 +239,29 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
 
     return filtered_data
 
+def get_emp_role():
+    emp = Role.objects.get(name="Employee")
+    return emp
+
+def get_admin_role():
+    admin = Role.objects.get(name="Admin")
+    return admin
+
+def get_manager_role():
+    manager = Role.objects.get(name="Manager")
+    return manager
 
 def getUserSupervisor(user):
-    if user.is_admin:
+    if user.role.name=="Admin" or user.role.name=="Director":
         return ""
     
     # discover the filter conditions based on the user's role
     filter_conditions = Q(location=user.location, department=user.department)
-    if user.is_manager:
-        filter_conditions &= Q(is_admin=True)
-    else:
-        filter_conditions &= Q(is_manager=True)
+    if user.role.name=="Manager":
+        filter_conditions &= Q(role=get_admin_role())
+    elif user.role.name=="Employee":
+        filter_conditions &= Q(role=get_manager_role())
+
     
     # query deez database to find the supervisor
     supervisor = CustomUser.objects.filter(filter_conditions).first()
@@ -589,6 +602,8 @@ def post_activity_data(request):
 
 @api_view(['GET'])
 @ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def overview_data(request):
     try:
         month = request.GET.get("month")
@@ -596,14 +611,16 @@ def overview_data(request):
         user_id = request.GET.get("user")
         department_id = request.GET.get("department")
         project_id = request.GET.get("project")
-        # if not request.user.is_admin:
-        #     messages.error(request, "Access Denied")
-        #     return JsonResponse({"error": "Access Denied"}, status=400)
 
         if month and year and user_id and department_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
-            users = CustomUser.objects.filter(is_superuser=False)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            ).order_by("username")
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
@@ -632,6 +649,9 @@ def overview_data(request):
 
 
 @api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def overview_manager_data(request):
     try:
         month = request.GET.get("month")
@@ -644,13 +664,16 @@ def overview_manager_data(request):
         if month and year and user_id and department_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
-
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=department_id,
-                    location=location_id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=department_id,
+                location=location_id
+            ).order_by("username")
+            
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
@@ -674,6 +697,9 @@ def overview_manager_data(request):
 
 
 @api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def overview_user_data(request, pk):
     try:
         month = request.GET.get("month")
@@ -742,7 +768,7 @@ def get_user_activity_report(request, pk):
 
             users = CustomUser.objects.filter(
                 id = user_id,
-                is_superuser = False,
+                is_superuser = False
             )
             logs = prepare_report_activity_logs(users, project_id, start_date, end_date)
             return JsonResponse(logs)
@@ -770,7 +796,7 @@ def get_user_project_report(request, pk):
 
             users = CustomUser.objects.filter(
                 id = user_id,
-                is_superuser = False,
+                is_superuser = False
             )
             logs = prepare_report_projects(users, project_id, start_date, end_date)
 
@@ -798,7 +824,7 @@ def get_user_leave_report(request, pk):
 
             users = CustomUser.objects.filter(
                 id = user_id,
-                is_superuser = False,
+                is_superuser = False
             )
             logs = prepare_report_leaves(users, start_date, end_date)
             return JsonResponse(logs)
@@ -824,7 +850,10 @@ def get_user_overview_report(request, pk):
         if month and year and user_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
-            user = CustomUser.objects.filter(id=user_id, is_superuser=False)
+            user = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False
+            )
             total_hours:int = 0
             users_count = 1
 
@@ -896,7 +925,10 @@ def get_user_pro_act_report(request, pk):
         if month and year and user_id:
             start_date, end_date = get_start_end_date(month, year)
 
-            users = CustomUser.objects.filter(id=user_id, is_superuser=False)
+            users = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False
+            )
             total_hours:int = 0
             users_count = 1
 
@@ -952,13 +984,19 @@ def get_manager_activity_report(request, pk):
 
         if month and year and manager_id and project_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
+
             manager = CustomUser.objects.get(id=manager_id)
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=manager.department.id,
-                    location=manager.location.id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
@@ -989,12 +1027,17 @@ def get_manager_project_report(request, pk):
 
             manager = CustomUser.objects.get(id=manager_id)
 
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=manager.department.id,
-                    location=manager.location.id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
@@ -1024,12 +1067,17 @@ def get_manager_leave_report(request, pk):
             start_date, end_date = get_start_end_date(month, year)
             manager = CustomUser.objects.get(id=manager_id)
 
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=manager.department.id,
-                    location=manager.location.id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
@@ -1060,12 +1108,17 @@ def get_manager_overview_report(request, pk):
 
             manager = CustomUser.objects.get(id=manager_id)
 
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=manager.department.id,
-                    location=manager.location.id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             
@@ -1141,12 +1194,18 @@ def get_manager_pro_act_report(request, pk):
         if month and year and manager_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
             manager = CustomUser.objects.get(id=manager_id)
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
             users = CustomUser.objects.filter(
-                    is_superuser = False,
-                    department=manager.department.id,
-                    location=manager.location.id,
-                    is_admin=False
-                )
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
@@ -1205,7 +1264,13 @@ def get_admin_activity_report(request, pk):
 
         if month and year and admin_id and project_id and user_id and department_id:
             start_date, end_date = get_start_end_date(month, year)
-            users = CustomUser.objects.filter(is_superuser=False)
+
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
+
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
@@ -1236,7 +1301,11 @@ def get_admin_project_report(request, pk):
 
         if month and year and admin_id and project_id and user_id and department_id:
             start_date, end_date = get_start_end_date(month, year)
-            users = CustomUser.objects.filter(is_superuser=False)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
@@ -1267,7 +1336,11 @@ def get_admin_leave_report(request, pk):
 
         if month and year and admin_id and user_id and department_id:
             start_date, end_date = get_start_end_date(month, year)
-            users = CustomUser.objects.filter(is_superuser=False)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
@@ -1298,7 +1371,11 @@ def get_admin_overview_report(request, pk):
 
         if month and year and admin_id and project_id and user_id and department_id:
             start_date, end_date = get_start_end_date(month, year)
-            users = CustomUser.objects.filter(is_superuser=False)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
@@ -1376,7 +1453,11 @@ def get_admin_pro_act_report(request, pk):
 
         if month and year and admin_id and user_id and department_id:
             start_date, end_date = get_start_end_date(month, year)
-            users = CustomUser.objects.filter(is_superuser=False)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
