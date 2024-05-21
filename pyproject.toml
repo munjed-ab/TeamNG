@@ -84,7 +84,7 @@ trove-classifiers = "2024.4.10"
 urllib3 = "2.2.1"
 virtualenv = "20.26.1"
 kolo = "2.21.1"
-gunicorn = "21.2.0"
+gunicorn = "22.0.0"
 
 
 [build-system]
