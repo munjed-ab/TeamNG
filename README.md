@@ -25,9 +25,12 @@ This Employee Management System is a web application designed for a company to m
 
 **FullCalendar:** A JavaScript event calendar plugin used for displaying work hours and scheduling leave days.
 
-**FlatPicker:** a lightweight and powerful datetime picker.
+**FlatPicker:** A lightweight and powerful datetime picker.
 
 **SB Admin 2 Template:** A free Bootstrap admin template used as a base for the application's UI.
+
+**SheetJS:** A JavaScript library for reading and writing data from spreadsheets.
+
 
 ## License
 
@@ -38,6 +41,9 @@ Chart.js: [MIT](https://github.com/chartjs/Chart.js/blob/master/LICENSE.md) Lice
 FullCalendar: [MIT](https://fullcalendar.io/license) License
 
 SB Admin 2 Template: [MIT](https://github.com/twbs/bootstrap/blob/main/LICENSE) License
+
+SheetJS: [Apache](https://git.sheetjs.com/sheetjs/sheetjs/src/commit/f80478703388a69b953f9be35506e3f78afb8a04/dist/LICENSE) License
+
 
 ## Authors
 
