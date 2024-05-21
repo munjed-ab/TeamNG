@@ -16,7 +16,7 @@ def send_signup_email(self, email_to):
         user = CustomUser.objects.get(email=email_to)
         subject = 'Welcome to Team Information'
         user_name = user.username
-        domain = 'www.teaminformation.com'
+        domain = 'activity.teamnigeria.com.ng'
         html_template = 'project_manager/emails/sign_up_email.html'
         
         # Encode the image file
