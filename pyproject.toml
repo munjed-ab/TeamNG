@@ -76,7 +76,6 @@ ptyprocess = "0.7.0"
 pyproject-hooks = "1.1.0"
 pywin32-ctypes = "0.2.2"
 rapidfuzz = "3.9.0"
-requests = "2.31.0"
 requests-toolbelt = "1.0.0"
 shellingham = "1.5.4"
 tomlkit = "0.12.5"
@@ -85,6 +84,7 @@ urllib3 = "2.2.1"
 virtualenv = "20.26.1"
 kolo = "2.21.1"
 gunicorn = "22.0.0"
+requests = "2.32.0"
 
 
 [build-system]
