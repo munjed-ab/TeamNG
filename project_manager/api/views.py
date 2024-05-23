@@ -619,7 +619,7 @@ def overview_data(request):
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
                 ~Q(is_superuser=True)
-            ).order_by("username")
+            )
 
             if user_id != "all":
                 users = users.filter(id=int(user_id))
