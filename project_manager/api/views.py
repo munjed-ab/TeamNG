@@ -626,9 +626,11 @@ def overview_data(request):
             if department_id != "all":
                 users = users.filter(department=int(department_id))
 
+            total_hours:int = 0
             user_count = users.count()
-
-            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * user_count
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
+            total_days = len(filtered_dates_satge1)
+            total_hours = 8 * total_days * user_count
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
             hours_pub_holiday = calculate_public_holidays(start_date, end_date, user_count)
