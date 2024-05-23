@@ -393,7 +393,7 @@ def create_loc(request):
     context = {
         "form":form
     }
-    return render(request, "project_manager/admin_control/Locations/create_loc.html", context)
+    return render(request, "project_manager/admin_control/locations/create_loc.html", context)
 
 
 @login_required(login_url="login")
