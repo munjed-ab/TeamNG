@@ -6,6 +6,11 @@
     color: white;
     -webkit-appearance: none;
   }
+  .modal-fullscreen {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
 </style>
 <div class="container mt-5">
   <!-- Filters Section -->
@@ -73,6 +78,36 @@
         <!--LOGS CONTENT HERE-->
       </tbody>
     </table>
+  </div>
+  <!-- Modal Structure -->
+  <div
+    class="modal fade"
+    id="tableModal"
+    tabindex="-1"
+    aria-labelledby="tableModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-scrollable modal-fullscreen">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tableModalLabel">Project/Actvity</h5>
+          <i
+            class="fa fa-times fa-2x btn-close"
+            style="cursor: pointer"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          ></i>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table id="TableInModal" class="table table-striped">
+              <thead class="table-head-color" id="modal-head"></thead>
+              <tbody id="modal-logs-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %} {% block js %} {{ block.super }}

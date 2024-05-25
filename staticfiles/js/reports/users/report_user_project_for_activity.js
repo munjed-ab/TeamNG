@@ -74,7 +74,11 @@ $(document).ready(function () {
     let projects = [];
     let activitys = [];
     var row_head = $("<tr>").appendTo(header_table);
-    $("<th>").text("").appendTo(row_head);
+    $("<th>")
+      .html(
+        `<i id='expand' style='display: flex; justify-content: center;cursor:pointer;' class='fa fa-expand fa-4x' aria-hidden='true'></i>`
+      )
+      .appendTo(row_head);
 
     response.forEach((all) => {
       if (!activitys.includes(all.activity.name)) {
@@ -128,62 +132,9 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
-
-      ws["!cols"] = [
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
-      ];
+      ws["!cols"] = Array(25).fill({ wpx: 80 });
       ws["!rows"] = [{ hpx: 30 }];
-      let cells = [
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "I",
-        "J",
-        "K",
-        "L",
-        "M",
-        "N",
-        "O",
-        "P",
-        "Q",
-        "R",
-        "S",
-        "T",
-        "U",
-        "V",
-        "W",
-        "X",
-        "Y",
-        "Z",
-      ];     
+      let cells = "BCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
       for (let index = 2; index < activities_count + 3; index++) {
         if (ws[`A${index}`]) {
           if (ws[`A${index}`].v == "Percentage") {
@@ -216,5 +167,14 @@ $(document).ready(function () {
         `project_for_activity_report_in_${year}_${month}.xlsb`
       );
     });
+  $("#tableModal .btn-close").click(function () {
+    $("#tableModal").modal("hide");
+  });
+  $(document).on("click", "#expand", function () {
+    $("#modal-head").html($("#head").html());
+
+    $("#modal-logs-table").html($("#logs-table").html());
+    $("#tableModal").modal("show");
+  });
   handleFilterChange(); // Initial call to load data
 });
