@@ -1,0 +1,92 @@
+{% extends 'base.html' %} {% block content %}{% load static %}
+<style>
+  .form-control {
+    border: 2px solid #ffffff;
+    background: var(--primary);
+    color: white;
+    -webkit-appearance: none;
+  }
+</style>
+<div class="container mt-5">
+  <!-- Filters Section -->
+  <div class="row mb-4">
+    <div class="col-md-3 wrapper-filter">
+      <label for="month-filter">Month:</label>
+      <select id="month-filter" class="form-control">
+        <option value="all">All Months</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="year-filter">Year:</label>
+      <select id="year-filter" class="form-control">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2025">2026</option>
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="user-filter">User:</label>
+      <select id="user-filter" class="form-control">
+        <option value="all">All Users</option>
+        {% for user in users %}
+        <option value="{{user.id}}">{{user.username}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 wrapper-filter">
+      <label for="department-filter">Department:</label>
+      <select id="department-filter" class="form-control">
+        <option value="all">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{dept.id}}">{{dept.dept_name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <h2 class="float-left">Missed Hours</h2>
+  <h2 class="float-right">
+    <a href="#">
+      <i
+        id="downloadExcelBtn"
+        class="fa fa-file-excel fa-x"
+        style="color: green; cursor: pointer"
+      >
+      </i
+    ></a>
+  </h2>
+  <div class="table-responsive">
+    <table id="TableToExport" class="table table-striped">
+      <thead class="table-head-color">
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Department</th>
+          <th>Total Hours</th>
+          <th>Worked Hours</th>
+          <th>Leave Hours</th>
+          <th>Missed Hours</th>
+        </tr>
+      </thead>
+      <tbody id="logs-table">
+        <!--LOGS CONTENT HERE-->
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %} {% block js %} {{ block.super }}
+{{user.id|json_script:"user_id"}}
+<script src="{% static 'js/reports/sheetjs/xlsx.full.min.js' %}"></script>
+<script src="{% static 'js/reports/admins/report_admin_missed_hours.js' %}"></script>
+{% endblock %}
