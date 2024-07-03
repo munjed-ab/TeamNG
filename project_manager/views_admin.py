@@ -725,3 +725,32 @@ def report_holiday(request):
     
     return render(request, "project_manager/reports/admins/report_admin_holidays.html", context={})
     
+
+def report_admin_missed_hours(request, pk):
+    if not request.user.is_authenticated:
+        redirect('login')
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are banned.")
+        return redirect("login")
+    elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
+    users = CustomUser.objects.filter(
+        ~Q(role=dir.id),
+        ~Q(is_superuser=True)
+    ).order_by("username")
+    departments = Department.objects.all()
+    projects = Project.objects.all()
+
+    context = {
+        "user":user,
+        "users":users,
+        "departments":departments,
+        "projects" : projects
+    }
+    return render(request, "project_manager/reports/admins/report_admin_missed_hours.html", context)
