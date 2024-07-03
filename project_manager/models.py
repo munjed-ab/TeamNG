@@ -132,8 +132,7 @@ class Leave(models.Model):
     to_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='leaves_received', null=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    days = models.IntegerField()
-    v_days = models.IntegerField(null=True)
+    total_leave_days = models.IntegerField(null=True)
     leave_type = models.CharField(max_length=100, default="Casual")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -145,6 +144,7 @@ class Leave(models.Model):
 
     def __str__(self):
         return str(self.from_user) + " to " + str(self.to_user)
+
 
 class Holiday(models.Model):
     holiday_name = models.CharField(max_length=100)
