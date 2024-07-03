@@ -30,6 +30,7 @@ urlpatterns = [
     path('report/project/manager/<str:pk>', views.get_manager_project_report, name='get_manager_project_report'),
     path('report/leave/manager/<str:pk>', views.get_manager_leave_report, name='get_manager_leave_report'),
     path('report/expected_hours/manager/<str:pk>', views.get_manager_overview_report, name='get_manager_overview_report'),
+    path('report/missed_hours/manager/<str:pk>', views.get_manager_missed_report, name='get_manager_missed_report'),
     path('report/project-for-activity/manager/<str:pk>', views.get_manager_pro_act_report, name='get_manager_pro_act_report'),
 
     # admin reports
@@ -37,6 +38,7 @@ urlpatterns = [
     path('report/project/admin/<str:pk>', views.get_admin_project_report, name='get_admin_project_report'),
     path('report/leave/admin/<str:pk>', views.get_admin_leave_report, name='get_admin_leave_report'),
     path('report/expected_hours/admin/<str:pk>', views.get_admin_overview_report, name='get_admin_overview_report'),
+    path('report/missed_hours/admin/<str:pk>', views.get_admin_missed_report, name='get_admin_missed_report'),
     path('report/project-for-activity/admin/<str:pk>', views.get_admin_pro_act_report, name='get_admin_pro_act_report'),
     path('report/holiday/', views.get_holiday_report, name='get_holiday_report'),
 ]
