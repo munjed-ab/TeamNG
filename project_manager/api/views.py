@@ -107,7 +107,7 @@ def get_activity_logs(user_id: int, project_id: int, order_start: date, order_en
         return ActivityLogs.objects.filter(user=user_id, date__range=[order_start, order_end], project=project_id)
 
 
-def calculate_public_holidays(order_start: date, order_end: date, users_count: int):
+def calculate_public_holidays(order_start: date, order_end: date, users: list[CustomUser]):
     """
     Calculate the total number of public holiday hours within a time period.
     """
@@ -115,7 +115,8 @@ def calculate_public_holidays(order_start: date, order_end: date, users_count: i
         holiday_date__range=[order_start, order_end]
     ).count()
 
-    hours_pub_holiday = pub_holidays * 8 * users_count
+    daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+    hours_pub_holiday = pub_holidays * daily_hours_total
     return hours_pub_holiday
 
 
@@ -140,7 +141,32 @@ def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: 
             leave_start = max(leave_request.start_date, order_start)
             leave_end = min(leave_request.end_date, order_end)
             filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
-            hours_leave_days += len(filtered_dates) * 8
+            hours_leave_days += len(filtered_dates) * user.daily_hours
+    return hours_leave_days
+
+
+def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: date)-> int:
+    """
+    Purpose: Calculates the total number of leave days taken by user within a time period.
+    Parameters:
+        user: QuerySet of users.
+        order_start: The start date of the time period.
+        order_end: The end date of the time period.
+    Returns: The total number of leave days taken by users.
+    """
+    hours_leave_days = 0
+
+    approved_leave_requests = Leave.objects.filter(
+        from_user=user.id,
+        is_approved=True,
+        start_date__lte=order_end,
+        end_date__gte=order_start
+    )
+    for leave_request in approved_leave_requests:
+        leave_start = max(leave_request.start_date, order_start)
+        leave_end = min(leave_request.end_date, order_end)
+        filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
+        hours_leave_days += len(filtered_dates) * user.daily_hours
     return hours_leave_days
 
 
@@ -187,13 +213,14 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
     return project_data, activity_type_data, total_worked_hours
 
 
-def prepare_response_data(project_data:dict, activity_type_data:dict, total_hours:int, total_worked_hours:float, missed_hours:float, hours_leave_days:int, hours_pub_holiday:int) -> dict:
+def prepare_response_data(project_data:dict, activity_type_data:dict, total_hours_wleave:int, total_hours:int, total_worked_hours:float, missed_hours:float, hours_leave_days:int, hours_pub_holiday:int) -> dict:
     """
     Purpose: Prepares the response data for the overview.
     Parameters:
         project_data: Dictionary containing project data.
         activity_type_data: Dictionary containing activity type data.
-        total_hours: Total expected hours.
+        total_hours_wleave: Total expected hours with the leave hours.
+        total_hours: Total expected hours after extracting the leave hours.
         total_worked_hours: Total worked hours.
         missed_hours: Total missed hours.
         hours_leave_days: Total leave hours.
@@ -225,7 +252,7 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
     filtered_data["projects"].append({
         "name": "Leaves",
         "total": hours_leave_days,
-        "percentage": hours_leave_days * 100 / total_hours if total_hours > 0 else 0
+        "percentage": hours_leave_days * 100 / total_hours_wleave if total_hours_wleave > 0 else 0
     })
 
     for activity_name, data in activity_type_data.items():
@@ -332,17 +359,20 @@ def prepare_report_leaves(users, start_date, end_date):
     
     # Iterate through leave records to prepare leave data
     for log in leaves_queryset:
-        leave_data = {
+        filtered_dates, weekends_count, pub_holidays_count = get_filtered_dates(log.start_date, log.end_date, extra_info=True)
+
+        leaves.append({
             "from": log.from_user.username if log.from_user else None,
             "to": log.to_user.username if log.to_user else None,
             "start_date": log.start_date.strftime(r"%Y-%m-%d"),
             "end_date": log.end_date.strftime(r"%Y-%m-%d"),
-            "days": log.v_days,
-            "actual_days": log.days,
+            "total_leave_days":log.total_leave_days,
+            "actual_leave_days":len(filtered_dates),
+            "weekends_count": weekends_count,
+            "pub_holidays_count":pub_holidays_count,
             "type": log.leave_type,
             "respond": "reject" if log.is_rejected else "accept" if log.is_approved else "pending"
-        }
-        leaves.append(leave_data)
+        })
 
     logs["leaves"] = leaves
     return logs
@@ -626,19 +656,27 @@ def overview_data(request):
             if department_id != "all":
                 users = users.filter(department=int(department_id))
 
+            
             total_hours:int = 0
             user_count = users.count()
+
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * user_count
+
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, user_count)
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
             total_hours -= hours_pub_holiday
+            total_hours_wleave = total_hours
+
+            total_hours -= hours_leave_days
+
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
-            missed_hours = total_hours - float(total_worked_hours)
-            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, float(total_worked_hours), missed_hours, hours_leave_days, hours_pub_holiday)
+            missed_hours = total_hours - Decimal(total_worked_hours)
+            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours , Decimal(total_worked_hours), missed_hours, hours_leave_days, hours_pub_holiday)
 
             return JsonResponse(filtered_data)
         else:
@@ -679,15 +717,19 @@ def overview_manager_data(request):
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
-            total_hours = 8 * len(get_filtered_dates(start_date, end_date)) * len(users)
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * len(get_filtered_dates(start_date, end_date, False))
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, len(users))
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
             total_hours -= hours_pub_holiday
+            total_hours_wleave = total_hours
+
+            total_hours -= hours_leave_days
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
-            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
+            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours , total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
 
             return JsonResponse(filtered_data)
         else:
@@ -715,15 +757,25 @@ def overview_user_data(request, pk):
             users = CustomUser.objects.filter(
                     id = user_id
                 )
-            total_hours = 8 * len(get_filtered_dates(start_date, end_date))
+
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * len(get_filtered_dates(start_date, end_date, False))
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, 1)
+            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
             total_hours -= hours_pub_holiday
+            
+            # this is for calculating the percentage of leave project from the expected total hours 
+            # before we extract the leave hours
+            total_hours_wleave = total_hours
+
+            # extracting the leave hours from the total so we could calculate the percentage of projects
+            # from the actual days a user have to work in (execluding the leave hours)
+            total_hours -= hours_leave_days
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
-            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
+            filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
 
             return JsonResponse(filtered_data)
         else:
@@ -857,22 +909,25 @@ def get_user_overview_report(request, pk):
                 is_superuser = False
             )
             total_hours:int = 0
-            users_count = 1
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+
+            daily_hours_total = user.first().daily_hours
+            total_hours = daily_hours_total * total_days
 
             hours_leave_days = calculate_leave_days(user, start_date, end_date)
             hours_leave_days_percentage = 0
             if total_hours > 0:
                 hours_leave_days_percentage = hours_leave_days*100 / total_hours
 
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, user)
             total_hours -= hours_pub_holiday
 
+            total_hours -= hours_leave_days
+
             project_data, total_worked_hours = prepare_report_expected_projects_workes(user, project_id, total_hours, start_date, end_date)
-            total_worked_hours = float(total_worked_hours)
+            total_worked_hours = Decimal(total_worked_hours)
             percent_complete = 0
             if total_hours > 0:
                 percent_complete = (total_worked_hours*100) / total_hours
@@ -932,11 +987,11 @@ def get_user_pro_act_report(request, pk):
                 is_superuser = False
             )
             total_hours:int = 0
-            users_count = 1
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+            daily_hours_total = users.first().daily_hours
+            total_hours = daily_hours_total * total_days
 
             project_activities, project_percentages, activity_percentages =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -1125,22 +1180,24 @@ def get_manager_overview_report(request, pk):
                 users = users.filter(id=int(user_id))
             
             total_hours:int = 0
-            users_count = len(users)
 
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), with_holidays=False)
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
             hours_leave_days_percentage = 0
             if total_hours > 0:
                 hours_leave_days_percentage = hours_leave_days*100 / total_hours
 
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users)
             total_hours -= hours_pub_holiday
 
+            total_hours -= hours_leave_days
+
             project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
-            total_worked_hours = float(total_worked_hours)
+            total_worked_hours = Decimal(total_worked_hours)
             percent_complete = 0
             if total_hours > 0:
                 percent_complete = (total_worked_hours*100) / total_hours
@@ -1186,6 +1243,74 @@ def get_manager_overview_report(request, pk):
 @ensure_csrf_cookie
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
+def get_manager_missed_report(request, pk):
+    try:
+        user_id = request.GET.get("user")
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        manager_id = int(pk)
+
+        if month and year and manager_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+            manager = CustomUser.objects.get(id=manager_id)
+
+            dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
+            users = CustomUser.objects.filter(
+                ~Q(is_superuser=True),
+                ~Q(role=dir.id),
+                ~Q(role=adm.id),
+                department=manager.department.id,
+                location=manager.location.id
+            )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), True)
+            total_days = len(filtered_dates_satge1)
+
+            user_report = []
+
+            for user in users:
+                # Calculate total expected hours
+                total_expected_hours = Decimal(user.daily_hours) * total_days
+
+                # Calculate total worked hours
+                activity_logs = get_activity_logs(user.id, "all", start_date, end_date)
+                total_worked_hours = sum(Decimal(log.hours_worked) for log in activity_logs)
+                hours_leave_days = calculate_leave_days_user(user, start_date, end_date)
+
+                # with the leave hours
+                total_actual_hours = total_expected_hours
+                
+                total_expected_hours-=hours_leave_days
+                # Calculate missed hours
+                missed_hours = total_expected_hours - total_worked_hours
+
+                if missed_hours > 0:
+                    user_report.append({
+                        "name": user.get_full_name(),
+                        "role": user.role.name,
+                        "expected_hours": total_actual_hours,
+                        "worked_hours":total_worked_hours,
+                        "leave_hours":hours_leave_days,
+                        "missed_hours": missed_hours,
+                    })
+            return JsonResponse({"users": user_report})
+
+        else:
+            messages.error(request, "Invalid request parameters")
+            return JsonResponse({"error": "Invalid request"}, status=400)
+
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
+        return JsonResponse({"error": "Server error"}, status=500)
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_manager_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1212,11 +1337,11 @@ def get_manager_pro_act_report(request, pk):
                 users = users.filter(id=int(user_id))
 
             total_hours:int = 0
-            users_count = len(users)
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
 
             project_activities, project_percentages, activity_percentages =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -1240,6 +1365,8 @@ def get_manager_pro_act_report(request, pk):
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
     
+
+
 
 
 ###############################################################
@@ -1384,22 +1511,24 @@ def get_admin_overview_report(request, pk):
                 users = users.filter(department=int(department_id))
             
             total_hours:int = 0
-            users_count = len(users)
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
 
             hours_leave_days = calculate_leave_days(users, start_date, end_date)
             hours_leave_days_percentage = 0
             if total_hours > 0:
                 hours_leave_days_percentage = hours_leave_days*100 / total_hours
 
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users_count)
+            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users)
             total_hours -= hours_pub_holiday
 
+            total_hours -= hours_leave_days
+
             project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
-            total_worked_hours = float(total_worked_hours)
+            total_worked_hours = Decimal(total_worked_hours)
             percent_complete = 0
             if total_hours > 0:
                 percent_complete = (total_worked_hours*100) / total_hours
@@ -1445,6 +1574,74 @@ def get_admin_overview_report(request, pk):
 @ensure_csrf_cookie
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
+def get_admin_missed_report(request, pk):
+    try:
+        user_id = request.GET.get("user")
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+
+        if month and year and admin_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+
+            user_report = []
+
+            for user in users:
+                # Calculate total expected hours
+                total_expected_hours = Decimal(user.daily_hours) * total_days
+
+                # Calculate total worked hours
+                activity_logs = get_activity_logs(user.id, "all", start_date, end_date)
+                total_worked_hours = sum(Decimal(log.hours_worked) for log in activity_logs)
+                hours_leave_days = calculate_leave_days_user(user, start_date, end_date)
+
+                # with the leave hours
+                total_actual_hours = total_expected_hours
+                
+                total_expected_hours-=hours_leave_days
+                # Calculate missed hours
+                missed_hours = total_expected_hours - total_worked_hours
+
+                if missed_hours > 0:
+                    user_report.append({
+                        "name": user.get_full_name(),
+                        "role": user.role.name,
+                        "department": user.department.dept_name,
+                        "expected_hours": total_actual_hours,
+                        "worked_hours":total_worked_hours,
+                        "leave_hours":hours_leave_days,
+                        "missed_hours": missed_hours,
+                    })
+
+            return JsonResponse({"users": user_report})
+
+        else:
+            messages.error(request, "Invalid request parameters")
+            return JsonResponse({"error": "Invalid request"}, status=400)
+
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
+        return JsonResponse({"error": "Server error"}, status=500)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def get_admin_pro_act_report(request, pk):
     try:
         month = request.GET.get("month")
@@ -1466,11 +1663,12 @@ def get_admin_pro_act_report(request, pk):
                 users = users.filter(department=int(department_id))
 
             total_hours:int = 0
-            users_count = len(users)
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
             total_days = len(filtered_dates_satge1)
-            total_hours = 8 * total_days * users_count
+
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
 
             project_activities, project_percentages, activity_percentages =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -1521,3 +1719,5 @@ def get_holiday_report(request):
     except:
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
+
+
