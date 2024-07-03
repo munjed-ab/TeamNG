@@ -6,9 +6,7 @@
   id="accordionSidebar"
 >
   <!-- Sidebar - Brand -->
-  <a
-    class="sidebar-brand d-flex align-items-center justify-content-center"
-  >
+  <a class="sidebar-brand d-flex align-items-center justify-content-center">
     <div class="sidebar-brand-icon rotate-n-10">
       <img id="logo-img" src="{% static 'img/loginlogo.png' %}" />
     </div>
@@ -36,8 +34,7 @@
       <span>Manager Overview</span></a
     >
   </li>
-  {% endif %}
-  {% if request.user.role.name != "Director" %}
+  {% endif %} {% if request.user.role.name != "Director" %}
   <!-- Nav Item - Dashboard -->
   <li class="nav-item {% if request.path == '/dashboard/' %}active{% endif %}">
     <a class="nav-link" href="{% url 'dashboard' %}">
@@ -86,7 +83,7 @@
       <span>Leave Logs</span>
     </a>
   </li>
-{% endif %}
+  {% endif %}
   <li class="nav-item">
     <a
       class="nav-link collapsed"
@@ -130,6 +127,11 @@
         >
         <a
           class="collapse-item"
+          href="{% url 'report_manager_missed_hours' request.user.id %}"
+          >Missed Hours</a
+        >
+        <a
+          class="collapse-item"
           href="{% url 'report_manager_pro_act' request.user.id %}"
           >Project/Activity Type</a
         >
@@ -157,6 +159,11 @@
           class="collapse-item"
           href="{% url 'report_admin_overview' request.user.id %}"
           >Expected Hours</a
+        >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_missed_hours' request.user.id %}"
+          >Missed Hours</a
         >
         <a
           class="collapse-item"
@@ -241,7 +248,7 @@
   <li class="nav-item">
     <div class="nav-link">
       <div class="text-center">
-        <a href="#" style="text-decoration: none">
+        <a href="mailto:it.nigeria@teamnigeria.com" style="text-decoration: none">
           <div
             style="background-color: grey; border-radius: 10px; padding: 10px"
           >
