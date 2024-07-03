@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const dayOfMonth = arg.date.getDate();
       const eventEl = arg.el;
       if (dayOfWeek === 0) {
-        eventEl.style.backgroundColor = "#2c3e50"; //rgb(209, 153, 153)
+        eventEl.style.backgroundColor = "rgb(222 223 233)"; //rgb(209, 153, 153) #f7f9ff rgb(222 223 233)
         eventEl.add;
       }
 
@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ((dayOfMonth > 7 && dayOfMonth <= 14) ||
           (dayOfMonth > 21 && dayOfMonth <= 28))
       ) {
-        eventEl.style.backgroundColor = "#2c3e50";
+        eventEl.style.backgroundColor = "rgb(222 223 233)";
       }
     },
     headerToolbar: {
@@ -217,7 +217,7 @@ function setColorGradient(info) {
  * @return {string} The calculated color in the format "rgb(r, g, b)".
  */
 function calculateColor(hoursWorked) {
-  const least = [140, 199, 207];
+  const least = [113, 155, 161]; //rgb(99 139 145) old:140, 199, 207 ,,new rgb(127 148 151)
   const middle = [99, 136, 199];
   const most = [43, 166, 98];
 

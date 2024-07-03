@@ -72,10 +72,12 @@ $(document).ready(function () {
       $("<td>").text(log.from).appendTo(row);
       $("<td>").text(log.to).appendTo(row);
       $("<td>").text(new Date(log.start_date).toDateString()).appendTo(row);
-
       $("<td>").text(new Date(log.end_date).toDateString()).appendTo(row);
-      $("<td>").text(log.days).appendTo(row);
-      $("<td>").text(log.actual_days).appendTo(row);
+
+      $("<td>").text(log.total_leave_days).appendTo(row);
+      $("<td>").text(log.weekends_count).appendTo(row);
+      $("<td>").text(log.pub_holidays_count).appendTo(row);
+      $("<td>").text(log.actual_leave_days).appendTo(row);
       $("<td>").text(log.type).appendTo(row);
       $("<td>").text(log.respond).appendTo(row);
     });

@@ -26,24 +26,35 @@ body {
 #calendar {
   color: white;
   width: 100%;
-  border: 1px solid #2c3e50;
-  max-width: 1500px;
+  border: 1px solid rgb(222 223 233);
+  max-width: 1300px;
   max-height: 500px;
   height: 100%;
   margin: 0 auto;
+  background-color: #f7f9ff;
+  box-shadow: 10px 10px 10px 10px rgb(222 223 233);
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid rgb(222 223 233) !important;
+}
+
+.fc-header-toolbar.fc-toolbar {
   background-color: var(--primary);
 }
+
 #calendar a {
-  color: white;
+  color: var(--primary);
 }
 .fc .fc-daygrid-day.fc-day-today {
-  background-color: #526679;
+  background-color: #c6e3ff;
 }
 .fc-daygrid-day-frame {
   color: white;
 }
 .fc .fc-scrollgrid-liquid {
-  border: 1px solid var(--primary);
+  border: 1px solid var(--background-color-main);
 }
 .fc-theme-standard td,
 .fc-theme-standard th {
@@ -65,7 +76,7 @@ body {
   align-items: center;
 }
 .least {
-  background-color: RGB(140, 199, 207);
+  background-color: RGB(113, 155, 161);
 }
 .middle {
   background-color: RGB(99, 136, 199);
@@ -79,6 +90,9 @@ body {
 }
 .leaves {
   background-color: rgb(49, 97, 120);
+}
+.weekends {
+  background-color: rgb(222, 223, 233);
 }
 .legend-rowl .col {
   margin-top: 10px;

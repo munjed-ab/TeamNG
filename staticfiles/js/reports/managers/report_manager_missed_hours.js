@@ -1,4 +1,5 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
+
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
 
@@ -42,18 +43,18 @@ $(document).ready(function () {
   function handleFilterChange() {
     var month = $("#month-filter").val();
     var year = $("#year-filter").val();
-    var project = $("#project-filter").val();
+    var user = $("#user-filter").val();
 
     $.ajax({
-      url: `/apis/report/leave/user/${user_id}`,
+      url: `/apis/report/missed_hours/manager/${user_id}`,
       method: "GET",
       data: {
         month: month,
         year: year,
-        project: project,
+        user: user,
       },
       success: function (response) {
-        updateTable(response.leaves);
+        updateTable(response.users);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -62,28 +63,52 @@ $(document).ready(function () {
   }
 
   function updateTable(response) {
-    console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
 
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>").text(log.from).appendTo(row);
-      $("<td>").text(log.to).appendTo(row);
-      $("<td>").text(new Date(log.start_date).toDateString()).appendTo(row);
-      $("<td>").text(new Date(log.end_date).toDateString()).appendTo(row);
-
-      $("<td>").text(log.total_leave_days).appendTo(row);
-      $("<td>").text(log.weekends_count).appendTo(row);
-      $("<td>").text(log.pub_holidays_count).appendTo(row);
-      $("<td>").text(log.actual_leave_days).appendTo(row);
-      $("<td>").text(log.type).appendTo(row);
-      $("<td>").text(log.respond).appendTo(row);
+      $("<td>").text(log.name).appendTo(row);
+      $("<td>").text(log.role).appendTo(row);
+      $("<td>")
+        .css({ "background-color": "var(--success)", color: "white" })
+        .text(
+          new Intl.NumberFormat().format(
+            parseFloat(log.expected_hours).toFixed(2)
+          )
+        )
+        .appendTo(row);
+      $("<td>")
+        .css({ "background-color": "var(--info)", color: "white" })
+        .text(
+          new Intl.NumberFormat().format(
+            parseFloat(log.worked_hours).toFixed(2)
+          )
+        )
+        .appendTo(row);
+      $("<td>")
+        .css({ "background-color": "var(--dark)", color: "white" })
+        .text(
+          new Intl.NumberFormat().format(parseFloat(log.leave_hours).toFixed(2))
+        )
+        .appendTo(row);
+      $("<td>")
+        .css({ "background-color": "var(--danger)", color: "white" })
+        .text(
+          new Intl.NumberFormat().format(
+            parseFloat(log.missed_hours).toFixed(2)
+          )
+        )
+        .appendTo(row);
     });
   }
 
-  $("#month-filter, #year-filter, #project-filter").change(function () {
+  $(
+    "#month-filter, #year-filter, #user-filter, #department-filter, #project-filter"
+  ).change(function () {
+    var selectedFilter = $(this).attr("id");
+
     handleFilterChange();
   });
   document
@@ -94,12 +119,10 @@ $(document).ready(function () {
         document.getElementById("TableToExport")
       );
 
-      // Process Data (add a new row)
       var ws = wb.Sheets["Sheet1"];
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
-
       ws["!cols"] = [
         { wpx: 80 },
         { wpx: 80 },
@@ -114,13 +137,23 @@ $(document).ready(function () {
         { wpx: 80 },
       ];
       ws["!rows"] = [{ hpx: 30 }];
+
       var month = $("#month-filter").val();
       var year = $("#year-filter").val();
       if (month == "all") {
         month = "_";
       }
+      var user = $("#user-filter").val();
 
-      XLSX.writeFile(wb, `leaves_report_in_${year}_${month}}.xlsb`);
+      if (user == "all") {
+        user = "all";
+      } else {
+        user = $("#user-filter option:selected").text();
+      }
+      XLSX.writeFile(
+        wb,
+        `missed_hours_report_in_${year}_${month}_of_${user}.xlsb`
+      );
     });
   handleFilterChange(); // Initial call to load data
 });
