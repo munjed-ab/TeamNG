@@ -51,7 +51,7 @@ def send_notification_email(self, email_to, respond, producer):
         user = CustomUser.objects.get(email=email_to)
         subject = 'You have notifications'
         user_name = user.username
-        domain = 'www.teaminformation.com'
+        domain = 'activity.teamnigeria.com.ng'
         html_template = 'project_manager/emails/notification_email.html'
         
         image_path = '/var/www/http/static/img/email_logo.jpg'
