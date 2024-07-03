@@ -119,7 +119,27 @@ def checkActivityInLeaveDays(user, start_date, end_date):
     data = ActivityLogs.objects.filter(user=user, date__range=[start_date, end_date])
     return any(log.hours_worked > 0 for log in data)
 
-def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True):
+# def checkLeavesInLeaveDays(user, start_date, end_date):
+#     data = Leave.objects.filter(
+#             user=user,
+#             start_date__lte=end_date,
+#             end_date__gte=start_date
+#     )
+
+#     return any(log.days > 0 for log in data)
+
+def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True, extra_info:bool=False):
+    """
+        this helper function takes a range dates and calculate the filtered days (no sat2,4 or sun) and returns:
+        list of all dates.
+        takes:
+            start_date: a string of the date
+            end_date: same as the start_date
+            with_holidays: a bool that determines whether we should execlude the public holidays too
+            extra_info: it scale the returns to extra infos, like "weekends_count" in this range of dates, and
+                "pub_holidays_count" too with the filtered_dates
+    """
+
     # convert start_date and end_date to pandas Timestamp objects
     start_date = pd.Timestamp(start_date)
     end_date = pd.Timestamp(end_date)
@@ -143,12 +163,20 @@ def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True):
 
     filtered_dates = [date for date in filtered_dates if date not in banned_saterdays]
 
+    count_no_holidays = len(filtered_dates)
+    weekends_count = len(date_range) - len(filtered_dates)
+    pub_holidays_count = 0
+
     if(with_holidays):
         holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
         # exclude public holidays
         filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
+        pub_holidays_count = count_no_holidays - len(filtered_dates)
 
-    return filtered_dates
+    if extra_info:
+        return filtered_dates, weekends_count, pub_holidays_count
+    else:
+        return filtered_dates
 
 
 
@@ -451,22 +479,26 @@ def addleave(request):
         leave_type = request.POST.get("leaveType")
 
         try:
-            days = 0 #filtered days
-            v_days = 0 #real days to view it
+            total_leave_days = 0 #real days to view it
             if start_date and end_date:
-                filtered_dates = get_filtered_dates(start_date, end_date)
-                days = len(filtered_dates)
 
                 start_date = datetime.strptime(start_date, f"%Y-%m-%d")
                 start_date = start_date.date()
                 end_date = datetime.strptime(end_date, f"%Y-%m-%d")
                 end_date = end_date.date()
-                v_days = (end_date - start_date).days + 1
+                total_leave_days = (end_date - start_date).days + 1
 
                 if checkActivityInLeaveDays(request.user, start_date, end_date):
                     messages.error(request,
                     "Canceled. Pick dates where you have not worked on.")
                     return redirect('addleave')
+
+                # if checkLeavesInLeaveDays(request.user, start_date, end_date):
+                #     print("check")
+                #     messages.error(request,
+                #     "Canceled. You already requested in these dates.")
+                #     return redirect('addleave')
+
             else:
                 messages.error(request,
                 "Something went wrong!")
@@ -477,8 +509,7 @@ def addleave(request):
                     from_user = request.user,
                     start_date = start_date,
                     end_date = end_date,
-                    days = days,
-                    v_days = v_days,
+                    total_leave_days = total_leave_days,
                     leave_type = leave_type,
                     is_approved = True
                 )
@@ -492,8 +523,7 @@ def addleave(request):
                     to_user = admin,
                     start_date = start_date,
                     end_date = end_date,
-                    days = days,
-                    v_days = v_days,
+                    total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
                 send_notification_email.delay(admin.email, "leave request", request.user.username)
@@ -508,8 +538,7 @@ def addleave(request):
                     to_user = manager,
                     start_date = start_date,
                     end_date = end_date,
-                    days = days,
-                    v_days = v_days,
+                    total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
                 send_notification_email.delay(manager.email, "leave request", request.user.username)
@@ -613,16 +642,36 @@ def leave_log(request):
     leave_logs = Leave.objects.filter(
         from_user = request.user.id
     ).order_by("-created")
+    leaves = []
+    today = date.today()
+    month_pass = timedelta(days=30)
 
-    # TO REJECT EVERY LEAVE REQUEST THAT START FROM THE SAME DAY IT WAS REQUESTED
-    # EDIT: IF REQUESTER ALREADY HAS NO WORKING HOURS ON "today" HE PROPABLY CAN REQUEST (HIDE FOR NOW)
-    # today = date.today()
-    # for leave in leave_logs:
-    #     if not (leave.is_approved or leave.is_rejected) and leave.start_date == today:
-    #         leave.is_rejected = True
-    #         leave.save()
+    for leave in leave_logs:
+        # TO REJECT EVERY LEAVE REQUEST THAT BEEN OVER A MONTH CREATED
+        if not (leave.is_approved or leave.is_rejected) and leave.created.date() + month_pass <= today:
+            leave.is_rejected = True
+            leave.save()
 
-    context = {"leave_logs":leave_logs}
+        filtered_dates, weekends_count, pub_holidays_count = get_filtered_dates(leave.start_date, leave.end_date, extra_info=True)
+
+        leaves.append({
+            "id":leave.id,
+            "from_user":leave.from_user.username,
+            "to_user": "---" if not leave.to_user else leave.to_user.username,
+            "start_date":leave.start_date,
+            "end_date":leave.end_date,
+            "total_leave_days":leave.total_leave_days,
+            "actual_leave_days":len(filtered_dates),
+            "weekends_count": weekends_count,
+            "pub_holidays_count":pub_holidays_count,
+            "leave_type":leave.leave_type,
+            "created":leave.created,
+            "updated":leave.updated,
+            "is_approved":leave.is_approved,
+            "is_rejected":leave.is_rejected
+        })
+
+    context = {"leave_logs":leaves}
     return render(request, 'project_manager/main_pages/leave_log.html', context)
 
 
@@ -635,6 +684,7 @@ def update_leave(request, pk):
         return redirect("login")
     
     leave = Leave.objects.get(id=pk)
+
     admin_role = Role.objects.get(name="Admin")
     manager_role = Role.objects.get(name="Manager")
 
@@ -660,21 +710,9 @@ def update_leave(request, pk):
         end_date = request.POST.get("endDate")
         leave_type = request.POST.get("leaveType")
 
-        days = 0 #filtered days
-        v_days = 0 #real days to view it
-        if start_date and end_date:
-            filtered_dates = get_filtered_dates(start_date, end_date)
-            days = len(filtered_dates)
-
-            start_date = datetime.strptime(start_date, f"%Y-%m-%d")
-            start_date = start_date.date()
-            end_date = datetime.strptime(end_date, f"%Y-%m-%d")
-            end_date = end_date.date()
-            v_days = (end_date - start_date).days + 1
-        else:
-            messages.error(request,
-            "Something went wrong!")
-            return redirect('leave_logs')
+        start_date = datetime.strptime(start_date, f"%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, f"%Y-%m-%d").date()
+        days = (end_date - start_date).days
 
         if checkActivityInLeaveDays(request.user, start_date, end_date):
             messages.error(request,
@@ -699,8 +737,7 @@ def update_leave(request, pk):
                 
                 leave.start_date = start_date
                 leave.end_date = end_date
-                leave.days = days
-                leave.v_days = v_days
+                leave.total_leave_days = days
                 leave.leave_type = leave_type
                 leave.save()
 
@@ -714,7 +751,6 @@ def update_leave(request, pk):
 
     context = {"admins": admins, "managers": managers, "leave": leave}
     return render(request, "project_manager/main_pages/update_leave.html", context)
-
 
 
 def delete_leave(request, pk):
@@ -766,7 +802,7 @@ def profile(request, pk):
 def upload_profile_image(request):
     if request.method == 'POST':
         try:
-            # Checking if a profile already exists for the user
+            # Check if a profile already exists for the user
             profile = Profile.objects.get(user=request.user)
             form = ProfileImageForm(request.POST, request.FILES, instance=profile)
             if profile.profile_img: #delete old image from the folder
@@ -780,12 +816,12 @@ def upload_profile_image(request):
             profile = form.save(commit=False)
             profile.user = request.user
 
-            # Opening the image using PIL
+            # Open the image using PIL
             image = Image.open(profile.profile_img)
 
-            # Checking if image is nort square
+            # Check if the image is not square
             if image.width != image.height:
-                # Croping non-square images to make them square
+                # Crop non-square images to make them square
                 min_size = min(image.width, image.height)
                 left = (image.width - min_size) / 2
                 top = (image.height - min_size) / 2
@@ -793,20 +829,20 @@ def upload_profile_image(request):
                 bottom = (image.height + min_size) / 2
                 image = image.crop((left, top, right, bottom))
 
-            # Resizing the image to a desired size (e.g., 200x200 pixels)
+            # Resize the image to a desired size (e.g., 200x200 pixels)
             size = (200, 200)
             image.thumbnail(size)
 
-            # Converting the image to RGB mode (if not already in RGB)
+            # Convert the image to RGB mode (if not already in RGB)
             if image.mode != 'RGB':
                 image = image.convert('RGB')
 
-            # Compressing and save the image
+            # Compress and save the image
             output = BytesIO()
             image.save(output, format='JPEG', quality=80)
             output.seek(0)
 
-            # Creating an InMemoryUploadedFile from the compressed image
+            # Create an InMemoryUploadedFile from the compressed image
             profile.profile_img = InMemoryUploadedFile(
                 output,
                 'ImageField',
@@ -819,7 +855,7 @@ def upload_profile_image(request):
             profile.save()
             return redirect('profile', request.user.id)  # Redirect to profile page after successful upload
     else:
-        # If the request method is not POST create a new form
+        # If the request method is not POST, create a new form
         form = ProfileImageForm()
     
     return render(request, 'project_manager/profile/upload_profile_img.html', {'form': form})
