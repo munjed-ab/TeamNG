@@ -82,6 +82,7 @@ urlpatterns = [
     path("report-admin-leaves/<str:pk>", views_admin.report_admin_leave, name="report_admin_leave"),
     path("report-admin-overview/<str:pk>", views_admin.report_admin_overview, name="report_admin_overview"),
     path("report-project-activity-admin/<str:pk>", views_admin.report_admin_pro_act, name="report_admin_pro_act"),
+    path("report-missed-hours-admin/<str:pk>", views_admin.report_admin_missed_hours, name="report_admin_missed_hours"),
     path("report-holiday/", views_admin.report_holiday, name="report_holiday"),
 
     #MANAGER
@@ -92,6 +93,7 @@ urlpatterns = [
     path("report-manager-leaves/<str:pk>", views_manager.report_manager_leave, name="report_manager_leave"),
     path("report-manager-overview/<str:pk>", views_manager.report_manager_overview, name="report_manager_overview"),
     path("report-project-activity-manager/<str:pk>", views_manager.report_manager_pro_act, name="report_manager_pro_act"),
+    path("report-missed-hours-manager/<str:pk>", views_manager.report_manager_missed_hours, name="report_manager_missed_hours"),
 
 ]
 if settings.DEBUG:
