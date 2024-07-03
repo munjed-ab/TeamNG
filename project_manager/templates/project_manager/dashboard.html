@@ -19,33 +19,39 @@
     <div class="col">
       <div class="legend">
         <div class="color-box least"></div>
-        <div class="legend-text">0</div>
+        <div class="legend-text">0h</div>
       </div>
     </div>
     <div class="col">
       <div class="legend">
         <div class="color-box middle"></div>
         <div class="legend-text">
-          1 - {{request.user.daily_hours|add:"-1"|floatformat}}
+          1 - {{request.user.daily_hours|add:"-1"|floatformat}}h
         </div>
       </div>
     </div>
     <div class="col">
       <div class="legend">
         <div class="color-box most"></div>
-        <div class="legend-text">{{request.user.daily_hours|floatformat}}</div>
+        <div class="legend-text">{{request.user.daily_hours|floatformat}}h</div>
       </div>
     </div>
     <div class="col">
       <div class="legend">
         <div class="color-box holidays"></div>
-        <div class="legend-text">holidays</div>
+        <div class="legend-text">Holidays</div>
       </div>
     </div>
     <div class="col">
       <div class="legend">
         <div class="color-box leaves"></div>
-        <div class="legend-text">leave days</div>
+        <div class="legend-text">Leave Days</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="legend">
+        <div class="color-box weekends"></div>
+        <div class="legend-text">Weekends</div>
       </div>
     </div>
   </div>

@@ -11,22 +11,27 @@
           <th>Start Date</th>
           <th>End Date</th>
           <th>Leave Type</th>
-          <th>Days</th>
+          <th>Total Days Span</th>
+          <th>Weekends</th>
+          <th>Public Holidays</th>
+          <th>Actual Days Span</th>
           <th>Time Since</th>
           <th>Status</th>
           <th>Action</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for request in leave_logs %}
         <tr>
-          <td>{{ request.from_user.username }}</td>
-          <td>{{ request.to_user.username }}</td>
+          <td>{{ request.from_user }}</td>
+          <td>{{ request.to_user }}</td>
           <td>{{ request.start_date|date:"Y-m-d"}}</td>
           <td>{{ request.end_date|date:"Y-m-d" }}</td>
           <td>{{ request.leave_type }}</td>
-          <td>{{ request.v_days }}</td>
+          <td>{{ request.total_leave_days }}</td>
+          <td>{{ request.weekends_count }}</td>
+          <td>{{ request.pub_holidays_count }}</td>
+          <td>{{ request.actual_leave_days }}</td>
           <td>{{ request.created|timesince }} ago</td>
           <td>
             {% if request.is_approved and not request.is_rejected %}
