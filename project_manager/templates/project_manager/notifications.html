@@ -20,7 +20,6 @@
           <th>Days</th>
           <th>Time Since</th>
           <th>Action</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -31,7 +30,7 @@
           <td>{{ request.start_date|date:"Y-m-d"}}</td>
           <td>{{ request.end_date|date:"Y-m-d" }}</td>
           <td>{{ request.leave_type }}</td>
-          <td>{{ request.v_days }}</td>
+          <td>{{ request.total_leave_days }}</td>
           <td>{{ request.created|timesince }} ago</td>
           <td>
             <div class="accept-icon float-left">
@@ -75,7 +74,7 @@
             <b>
               {{respond.to_user.username}}
               <i style="color: red">rejected</i> your request for
-              {{respond.v_days }} days from {{respond.start_date|date:"Y-m-d"}}
+              {{respond.total_leave_days }} days from {{respond.start_date|date:"Y-m-d"}}
               to {{respond.end_date|date:"Y-m-d"}}
               <sup
                 ><i style="color: royalblue"
@@ -100,7 +99,7 @@
             <b>
               {{respond.to_user.username}}
               <i style="color: green">approved</i> your request for
-              {{respond.v_days }} days from {{respond.start_date|date:"Y-m-d"}}
+              {{respond.total_leave_days }} days from {{respond.start_date|date:"Y-m-d"}}
               to {{respond.end_date|date:"Y-m-d"}}
               <sup
                 ><i style="color: royalblue"
