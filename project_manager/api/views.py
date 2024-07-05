@@ -362,8 +362,8 @@ def prepare_report_leaves(users, start_date, end_date):
         filtered_dates, weekends_count, pub_holidays_count = get_filtered_dates(log.start_date, log.end_date, extra_info=True)
 
         leaves.append({
-            "from": log.from_user.username if log.from_user else None,
-            "to": log.to_user.username if log.to_user else None,
+            "from": log.from_user.username if log.from_user else "__",
+            "to": log.to_user.username if log.to_user else "__",
             "start_date": log.start_date.strftime(r"%Y-%m-%d"),
             "end_date": log.end_date.strftime(r"%Y-%m-%d"),
             "total_leave_days":log.total_leave_days,
