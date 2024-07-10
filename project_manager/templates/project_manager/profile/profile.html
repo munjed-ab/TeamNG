@@ -67,7 +67,9 @@
               style="width: 150px; height: 150px"
               alt="Profile Picture"
             />
-            <h2 class="card-title mb-0">{{ user.get_full_name }}</h2>
+            <h2 class="card-title mb-0">
+              {{ user.first_name|title }} {{ user.last_name|title }}
+            </h2>
             <p class="card-text text-muted">@{{ user.username }}</p>
           </div>
           <hr class="profile-breaker" />

@@ -26,10 +26,10 @@
         {% for request in leave_requests %}
         <tr>
           <td>{{ request.id }}</td>
-          <td>{{ request.from_user }}</td>
+          <td>{{ request.from_user.first_name|title }} {{ request.from_user.last_name|title }}</td>
           <td>{{ request.start_date|date:"Y-m-d"}}</td>
           <td>{{ request.end_date|date:"Y-m-d" }}</td>
-          <td>{{ request.leave_type }}</td>
+          <td>{{ request.leave_type|upper }}</td>
           <td>{{ request.total_leave_days }}</td>
           <td>{{ request.created|timesince }} ago</td>
           <td>
@@ -72,7 +72,7 @@
         <tr>
           <td class="text-center bold">
             <b>
-              {{respond.to_user.username}}
+              {{respond.to_user.first_name|title}} {{respond.to_user.first_name|title}}
               <i style="color: red">rejected</i> your request for
               {{respond.total_leave_days }} days from {{respond.start_date|date:"Y-m-d"}}
               to {{respond.end_date|date:"Y-m-d"}}
@@ -97,7 +97,7 @@
         <tr>
           <td class="text-center bold">
             <b>
-              {{respond.to_user.username}}
+              {{respond.to_user.first_name|title}} {{respond.to_user.first_name|title}}
               <i style="color: green">approved</i> your request for
               {{respond.total_leave_days }} days from {{respond.start_date|date:"Y-m-d"}}
               to {{respond.end_date|date:"Y-m-d"}}
