@@ -20,7 +20,7 @@ def send_signup_email(self, email_to):
         html_template = 'project_manager/emails/sign_up_email.html'
         
         # Encode the image file
-        image_path = '/var/www/http/static/img/email_logo.jpg'
+        image_path = '/var/www/http/static/img/email_logo.png'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -54,7 +54,7 @@ def send_notification_email(self, email_to, respond, producer):
         domain = 'activity.teamnigeria.com.ng'
         html_template = 'project_manager/emails/notification_email.html'
         
-        image_path = '/var/www/http/static/img/email_logo.jpg'
+        image_path = '/var/www/http/static/img/email_logo.png'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -86,7 +86,7 @@ def send_notification_email_recieve_manager(self, email_to, respond, producer):
         domain = 'activity.teamnigeria.com.ng'
         html_template = 'project_manager/emails/notification_email_recieve_manager.html'
         
-        image_path = '/var/www/http/static/img/email_logo.jpg'
+        image_path = '/var/www/http/static/img/email_logo.png'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -118,7 +118,7 @@ def send_notification_email_recieve_admin(self, email_to, respond, msg):
         domain = 'activity.teamnigeria.com.ng'
         html_template = 'project_manager/emails/notification_email_recieve_admin.html'
         
-        image_path = '/var/www/http/static/img/email_logo.jpg'
+        image_path = '/var/www/http/static/img/email_logo.png'
         with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
 
