@@ -187,7 +187,7 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
     for activity_log in activity_logs:
         project_name = activity_log.project.project_name
         activity_type_name = activity_log.activity.activity_name
-        user_username = activity_log.user.username
+        fullname = activity_log.user.first_name.capitalize() + " " + activity_log.user.last_name.capitalize()
         
         project_data[project_name]['total'] += activity_log.hours_worked
         project_data[project_name]['activity_logs'].append({
@@ -196,7 +196,7 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
             'details': activity_log.details,
             'activity': activity_type_name,
             'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
-            'user': user_username
+            'user': fullname
         })
         
         activity_type_data[activity_type_name]['total'] += activity_log.hours_worked
@@ -206,7 +206,7 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
             'details': activity_log.details,
             'project': project_name,
             'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
-            'user': user_username
+            'user': fullname
         })
         total_worked_hours += activity_log.hours_worked
     
@@ -310,7 +310,7 @@ def prepare_report_activity_logs(users, project_id, start_date, end_date):
         project_name = log.project.project_name
         logs["activity_logs"].append({
             'time_added': log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
-            'username': log.user.username,
+            'username': log.user.first_name.capitalize() + " " + log.user.last_name.capitalize(),
             'project': project_name,
             'activity': log.activity.activity_name,
             'department': log.user.department.dept_name,
@@ -329,7 +329,7 @@ def prepare_report_projects(users: list[CustomUser], project_id: int, start_date
     for user in users:
         activity_logs = get_activity_logs(user.id, project_id, start_date, end_date)
         supervisor = getUserSupervisor(user)
-        username = user.username
+        username = user.first_name.capitalize() + " " + user.last_name.capitalize()
         dept = user.department.dept_name
         loc = user.location.loc_name
 
@@ -360,10 +360,9 @@ def prepare_report_leaves(users, start_date, end_date):
     # Iterate through leave records to prepare leave data
     for log in leaves_queryset:
         filtered_dates, weekends_count, pub_holidays_count = get_filtered_dates(log.start_date, log.end_date, extra_info=True)
-
         leaves.append({
-            "from": log.from_user.username if log.from_user else "__",
-            "to": log.to_user.username if log.to_user else "__",
+            "from": log.from_user.first_name.capitalize() + " " + log.from_user.last_name.capitalize() if log.from_user else "__",
+            "to": log.to_user.first_name.capitalize() + " " + log.to_user.last_name.capitalize() if log.to_user else "__",
             "start_date": log.start_date.strftime(r"%Y-%m-%d"),
             "end_date": log.end_date.strftime(r"%Y-%m-%d"),
             "total_leave_days":log.total_leave_days,
@@ -658,7 +657,6 @@ def overview_data(request):
 
             
             total_hours:int = 0
-            user_count = users.count()
 
             filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
             total_days = len(filtered_dates_satge1)
@@ -1290,7 +1288,7 @@ def get_manager_missed_report(request, pk):
 
                 if missed_hours > 0:
                     user_report.append({
-                        "name": user.get_full_name(),
+                        "name": user.first_name.capitalize() + " " + user.last_name.capitalize(),
                         "role": user.role.name,
                         "expected_hours": total_actual_hours,
                         "worked_hours":total_worked_hours,
@@ -1618,7 +1616,7 @@ def get_admin_missed_report(request, pk):
 
                 if missed_hours > 0:
                     user_report.append({
-                        "name": user.get_full_name(),
+                        "name": user.first_name.capitalize() + " " + user.last_name.capitalize(),
                         "role": user.role.name,
                         "department": user.department.dept_name,
                         "expected_hours": total_actual_hours,
