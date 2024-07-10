@@ -7,7 +7,7 @@ $(document).ready(function () {
     $("#leaveRequestId").val(leaveId);
     $("#response").val(response);
 
-    var message = response === "accept" ? "Accept request" : "Reject request";
+    var message = response === "approved" ? "Accept request" : "Reject request";
     $("#responseMessage").text(message);
     $("#responseModal").modal("show");
   });
