@@ -87,7 +87,7 @@ $(document).ready(function () {
     var row1 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "RGB(99, 136, 199)", color: "white" });
-    $("<td>").text("expected hours").appendTo(row1);
+    $("<td>").text("Expected Hours").appendTo(row1);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -98,7 +98,7 @@ $(document).ready(function () {
     var row2 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--success)", color: "white" });
-    $("<td>").text("worked hours").appendTo(row2);
+    $("<td>").text("Worked Hours").appendTo(row2);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -109,7 +109,7 @@ $(document).ready(function () {
     var row3 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--danger)", color: "white" });
-    $("<td>").text("missed hours").appendTo(row3);
+    $("<td>").text("Missed Hours").appendTo(row3);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -120,7 +120,7 @@ $(document).ready(function () {
     var row4 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--blue)", color: "white" });
-    $("<td>").text("public holiday hours").appendTo(row4);
+    $("<td>").text("Public Holiday Hours").appendTo(row4);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -131,7 +131,7 @@ $(document).ready(function () {
     var row5 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--dark)", color: "white" });
-    $("<td>").text("leave days hours").appendTo(row5);
+    $("<td>").text("Leave Days Hours").appendTo(row5);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -142,7 +142,7 @@ $(document).ready(function () {
     var row6 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--info)", color: "white" });
-    $("<td>").text("percent complete").appendTo(row6);
+    $("<td>").text("Percent Complete").appendTo(row6);
     $("<td>")
       .text(`${parseFloat(response.all.percent_complete).toFixed(2)}%`)
       .appendTo(row6);
