@@ -6,8 +6,8 @@
     <table class="table table-striped">
       <thead class="table-head-color">
         <tr>
-          <th>From</th>
-          <th>To</th>
+          <th>User</th>
+          <th>Approval</th>
           <th>Start Date</th>
           <th>End Date</th>
           <th>Leave Type</th>
@@ -16,15 +16,15 @@
           <th>Public Holidays</th>
           <th>Actual Days Span</th>
           <th>Time Since</th>
-          <th>Status</th>
+          <th>Approval Status</th>
           <th>Action</th>
         </tr>
       </thead>
       <tbody>
         {% for request in leave_logs %}
         <tr>
-          <td>{{ request.from_user }}</td>
-          <td>{{ request.to_user }}</td>
+          <td>{{ request.from_user.first_name|title }} {{ request.from_user.last_name|title }}</td>
+          <td>{{ request.to_user.first_name|title }} {{ request.to_user.last_name|title }}</td>
           <td>{{ request.start_date|date:"Y-m-d"}}</td>
           <td>{{ request.end_date|date:"Y-m-d" }}</td>
           <td>{{ request.leave_type }}</td>
