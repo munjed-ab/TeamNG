@@ -12,7 +12,7 @@ from django.contrib import messages
 from datetime import datetime, timedelta
 from django.db.models import Q
 from django.db import transaction
-from .tasks import send_notification_email
+from .tasks import send_notification_email, send_notification_email_recieve_manager, send_notification_email_recieve_admin
 import pandas as pd
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -513,6 +513,7 @@ def addleave(request):
                     leave_type = leave_type,
                     is_approved = True
                 )
+                send_notification_email_recieve_admin.delay(request.user.email, "leave request", "approved")
             elif request.user.role.name == "Manager":
                 admin_name = request.POST.get("adminName")
                 admin = CustomUser.objects.get(username = admin_name)
@@ -526,7 +527,7 @@ def addleave(request):
                     total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
-                send_notification_email.delay(admin.email, "leave request", request.user.username)
+                send_notification_email_recieve_manager.delay(admin.email, "leave request", request.user.username)
 
             else:
                 manager_name = request.POST.get("managerName")
@@ -541,7 +542,7 @@ def addleave(request):
                     total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
-                send_notification_email.delay(manager.email, "leave request", request.user.username)
+                send_notification_email_recieve_manager.delay(manager.email, "leave request", request.user.username)
             messages.success(request,
             "Request has been sent successfully.")
 
@@ -552,6 +553,7 @@ def addleave(request):
 
     context = {"admins":admins, "managers":managers}
     return render(request, "project_manager/main_pages/add_leave.html", context)
+
 
 def notifications(request):
     if not request.user.is_authenticated:
@@ -595,7 +597,7 @@ def notifications(request):
         try:
             leave = Leave.objects.get(id=request_id)
 
-            if response == "reject":
+            if response == "rejected":
                 leave.is_rejected = True
                 from_user = leave.from_user
                 from_user.has_notification = True
@@ -605,7 +607,7 @@ def notifications(request):
                 producer =  leave.to_user.username
                 send_notification_email.delay(email_to, response, producer)
 
-            elif response == "accept":
+            elif response == "approved":
                 leave.is_approved = True
                 from_user = leave.from_user
                 from_user.has_notification = True

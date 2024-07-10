@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to Team Activity Application</title>
+    <title>Notifications</title>
   </head>
   <body style="margin: 0; padding: 0; font-family: Arial, sans-serif">
     <table
@@ -35,9 +35,12 @@
       <tr>
         <td bgcolor="#2c3e50" style="color: white; padding: 15px">
           <p>Hi {{ username|upper }},</p>
-          <p>You created an account on Team Activity Application.</p>
+          <p>
+            Please be informed that you have pending {{respond|upper}} from
+            {{producer|upper}}.
+          </p>
           <p style="margin-top: 40px">
-            Visit:
+            Kindly visit the link below for further action:
             <a style="color: black" href="https://{{ domain }}"
               >https://{{ domain }}</a
             >
