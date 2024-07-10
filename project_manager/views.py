@@ -712,7 +712,7 @@ def update_leave(request, pk):
 
         start_date = datetime.strptime(start_date, f"%Y-%m-%d").date()
         end_date = datetime.strptime(end_date, f"%Y-%m-%d").date()
-        days = (end_date - start_date).days
+        days = (end_date - start_date).days + 1
 
         if checkActivityInLeaveDays(request.user, start_date, end_date):
             messages.error(request,
