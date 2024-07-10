@@ -23,8 +23,8 @@
       <tbody>
         {% for request in leave_logs %}
         <tr>
-          <td>{{ request.from_user.first_name|title }} {{ request.from_user.last_name|title }}</td>
-          <td>{{ request.to_user.first_name|title }} {{ request.to_user.last_name|title }}</td>
+          <td>{{ request.from_user }}</td>
+          <td>{{ request.to_user }}</td>
           <td>{{ request.start_date|date:"Y-m-d"}}</td>
           <td>{{ request.end_date|date:"Y-m-d" }}</td>
           <td>{{ request.leave_type }}</td>

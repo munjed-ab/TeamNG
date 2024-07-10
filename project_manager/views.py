@@ -658,8 +658,8 @@ def leave_log(request):
 
         leaves.append({
             "id":leave.id,
-            "from_user":leave.from_user.username,
-            "to_user": "__" if not leave.to_user else leave.to_user.username,
+            "from_user":leave.from_user.first_name.capitalize() + " " + leave.from_user.last_name.capitalize(),
+            "to_user": "__" if not leave.to_user else leave.to_user.first_name.capitalize() + " " + leave.to_user.last_name.capitalize(),
             "start_date":leave.start_date,
             "end_date":leave.end_date,
             "total_leave_days":leave.total_leave_days,
