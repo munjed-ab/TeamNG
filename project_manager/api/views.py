@@ -109,7 +109,7 @@ def get_activity_logs(user_id: int, project_id: int, order_start: date, order_en
 
 def calculate_public_holidays(order_start: date, order_end: date, users: list[CustomUser]):
     """
-    Calculate the total number of public holiday hours within a time period.
+    Calculates the total number of public holiday hours within a time period for given some users.
     """
     pub_holidays = Holiday.objects.filter(
         holiday_date__range=[order_start, order_end]
@@ -120,39 +120,44 @@ def calculate_public_holidays(order_start: date, order_end: date, users: list[Cu
     return hours_pub_holiday
 
 
-def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: date)-> int:
+def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: date) -> int:
     """
-    Purpose: Calculates the total number of leave days taken by users within a time period.
+    Purpose: Calculates the total number of leave days taken by users within a time period.\n
     Parameters:
-        users: QuerySet of users.
-        order_start: The start date of the time period.
-        order_end: The end date of the time period.
-    Returns: The total number of leave days taken by users.
+       * users: List of users.
+       * order_start: The start date of the time period.
+       * order_end: The end date of the time period.
+
+    Returns: The total number of leave days hours taken by users.
     """
+
+    leave_requests = Leave.objects.filter(
+        from_user__in=users,
+        is_approved=True,
+        start_date__lte=order_end,
+        end_date__gte=order_start
+    )
+    
     hours_leave_days = 0
-    for user in users:
-        approved_leave_requests = Leave.objects.filter(
-            from_user=user.id,
-            is_approved=True,
-            start_date__lte=order_end,
-            end_date__gte=order_start
-        )
-        for leave_request in approved_leave_requests:
-            leave_start = max(leave_request.start_date, order_start)
-            leave_end = min(leave_request.end_date, order_end)
-            filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
-            hours_leave_days += len(filtered_dates) * user.daily_hours
+    for leave_request in leave_requests:
+        leave_start = max(leave_request.start_date, order_start)
+        leave_end = min(leave_request.end_date, order_end)
+        filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
+        
+        hours_leave_days += len(filtered_dates) * leave_request.from_user.daily_hours
+    
     return hours_leave_days
 
 
 def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: date)-> int:
     """
-    Purpose: Calculates the total number of leave days taken by user within a time period.
+    Purpose: Calculates the total number of leave days taken by user within a time period.\n
     Parameters:
-        user: QuerySet of users.
-        order_start: The start date of the time period.
-        order_end: The end date of the time period.
-    Returns: The total number of leave days taken by users.
+       * user: a user.
+       * order_start: The start date of the time period.
+       * order_end: The end date of the time period.
+
+    Returns: The total number of leave hours days taken by users.
     """
     hours_leave_days = 0
 
@@ -171,7 +176,28 @@ def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: da
 
 
 def calculate_project_and_activity_data(users, project_id, date_start, date_end):
+    """
+    Purpose: Calculates and returns data on the total hours worked on projects and activities by users
+             within a specified date range.
 
+    Parameters:
+       * users (list[CustomUser]): A list of user objects for which the activity logs are to be retrieved.
+       * project_id (Any): The ID of the project to filter by. If "all", data for all projects will be included.
+       * date_start (date): The start date of the period for which data is to be retrieved.
+       * date_end (date): The end date of the period for which data is to be retrieved.
+
+    Returns:
+       * tuple: Contains three elements:
+                * project_data (dict): A dictionary with project names as keys, each containing:
+                        - 'total' (int): The total hours worked on the project.
+                        - 'percentage' (int): The percentage of total worked hours dedicated to the project.
+                        - 'activity_logs' (list): A list of dictionaries with details about each activity log related to the project.
+                * activity_type_data (dict): A dictionary with activity type names as keys, each containing:
+                        - 'total' (int): The total hours worked on the activity type.
+                        - 'percentage' (int): The percentage of total worked hours dedicated to the activity type.
+                        - 'activity_logs' (list): A list of dictionaries with details about each activity log related to the activity type.
+                * total_worked_hours (int): The total hours worked by all users within the specified date range.
+    """
     project_data = defaultdict(lambda: {'total': 0, 'percentage': 0, 'activity_logs': []})
     activity_type_data = defaultdict(lambda: {'total': 0, 'percentage': 0, 'activity_logs': []})
     total_worked_hours = 0
@@ -215,16 +241,17 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
 
 def prepare_response_data(project_data:dict, activity_type_data:dict, total_hours_wleave:int, total_hours:int, total_worked_hours:float, missed_hours:float, hours_leave_days:int, hours_pub_holiday:int) -> dict:
     """
-    Purpose: Prepares the response data for the overview.
+    Purpose: Prepares the response data for the overview.\n
     Parameters:
-        project_data: Dictionary containing project data.
-        activity_type_data: Dictionary containing activity type data.
-        total_hours_wleave: Total expected hours with the leave hours.
-        total_hours: Total expected hours after extracting the leave hours.
-        total_worked_hours: Total worked hours.
-        missed_hours: Total missed hours.
-        hours_leave_days: Total leave hours.
-        hours_pub_holiday: Total public holiday hours.
+       * project_data: Dictionary containing project data.
+       * activity_type_data: Dictionary containing activity type data.
+       * total_hours_wleave: Total expected hours with the leave hours.
+       * total_hours: Total expected hours after extracting the leave hours.
+       * total_worked_hours: Total worked hours.
+       * missed_hours: Total missed hours.
+       * hours_leave_days: Total leave hours.
+       * hours_pub_holiday: Total public holiday hours.
+
     Returns: A dictionary containing the prepared response data.
     """
     filtered_data = {
@@ -266,19 +293,50 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
 
     return filtered_data
 
+
 def get_emp_role():
+    """
+    Purpose: Retrieves the Role object for "Employee".
+    
+    Returns:
+        Role: The Role object for "Employee".
+    """
     emp = Role.objects.get(name="Employee")
     return emp
 
+
 def get_admin_role():
+    """
+    Purpose: Retrieves the Role object for "Admin".
+    
+    Returns:
+        Role: The Role object for "Admin".
+    """
     admin = Role.objects.get(name="Admin")
     return admin
 
+
 def get_manager_role():
+    """
+    Purpose: Retrieves the Role object for "Manager".
+    
+    Returns:
+        Role: The Role object for "Manager".
+    """
     manager = Role.objects.get(name="Manager")
     return manager
 
-def getUserSupervisor(user):
+
+def getUserSupervisor(user: CustomUser):
+    """
+    Purpose: Finds the supervisor of a given user based on their role, location, and department.
+    
+    Parameters:
+       * user (CustomUser): The user object for whom the supervisor is to be found.
+        
+    Returns:
+       * str: The full name of the supervisor if found, otherwise an empty string.
+    """
     if user.role.name=="Admin" or user.role.name=="Director":
         return ""
     
@@ -296,6 +354,27 @@ def getUserSupervisor(user):
 
 
 def prepare_report_activity_logs(users, project_id, start_date, end_date):
+    """
+    Purpose: Prepares a report of activity logs for specified users and project within a given date range.
+    
+    Parameters:
+       * users (list): A list of user objects for whom the activity logs are to be retrieved.
+       * project_id (str): The ID of the project to filter by. If "all", data for all projects will be included.
+       * start_date (date): The start date of the period for which data is to be retrieved.
+       * end_date (date): The end date of the period for which data is to be retrieved.
+    
+    Returns:
+       * dict: A dictionary containing the activity logs, structured as follows:
+                - activity_logs (list): A list of dictionaries with details about each activity log, including:
+                    - 'time_added' (str): The timestamp when the log was updated.
+                    - 'username' (str): The username of the user who created the log.
+                    - 'project' (str): The name of the project associated with the log.
+                    - 'activity' (str): The name of the activity associated with the log.
+                    - 'department' (str): The department name of the user who created the log.
+                    - 'date' (str): The date when the log was created.
+                    - 'hours_worked' (Decimal): The number of hours worked as recorded in the log.
+                    - 'details' (str): Additional details about the log entry.
+    """
     logs = {"activity_logs": []}
  
     # gettin all activity logs for the specified users and project within the date range
@@ -322,35 +401,81 @@ def prepare_report_activity_logs(users, project_id, start_date, end_date):
     return logs
 
 
-
 def prepare_report_projects(users: list[CustomUser], project_id: int, start_date: date, end_date: date)-> dict:
-    projects = defaultdict(lambda: {"project":"", "username":"", "department":"", "location":"", "supervisor":"","worked_hours":0})
+    """
+    Purpose: Prepares a report of projects detailing worked hours for specified users within a given date range.
+    
+    Parameters:
+       * users (list[CustomUser]): A list of CustomUser objects for whom the project reports are to be generated.
+       * project_id (int): The ID of the project to filter by.
+       * start_date (date): The start date of the period for which data is to be retrieved.
+       * end_date (date): The end date of the period for which data is to be retrieved.
+    
+    Returns:
+       * dict: A dictionary containing project details and worked hours, structured as follows:
+                - "projects" (list): A list of dictionaries with details about each project, including:
+                    - 'project' (str): The name of the project.
+                    - 'department' (str): The department associated with the user who worked on the project.
+                    - 'location' (str): The location associated with the user who worked on the project.
+                    - 'worked_hours' (int): The total hours worked on the project.
+    """
+    projects = defaultdict(lambda: {"project":"", "department":"", "location":"" ,"worked_hours":0})
     logs = {"projects":[]}
-    for user in users:
-        activity_logs = get_activity_logs(user.id, project_id, start_date, end_date)
-        supervisor = getUserSupervisor(user)
-        username = user.first_name.capitalize() + " " + user.last_name.capitalize()
-        dept = user.department.dept_name
-        loc = user.location.loc_name
 
-        for log in activity_logs:
-            project_name = log.project.project_name
-            projects[project_name]["project"] = project_name
-            projects[project_name]["username"] = username
-            projects[project_name]["department"] = dept
-            projects[project_name]["location"] = loc
-            projects[project_name]["supervisor"] = supervisor
-            projects[project_name]["worked_hours"] += log.hours_worked
+    activity_logs: list[ActivityLogs]
+    if project_id == "all":
+        activity_logs = ActivityLogs.objects.filter(
+            user_id__in=users,
+            date__range=[start_date, end_date],
+        ).values('project__project_name', 'user__department__dept_name', 'user__location__loc_name').annotate(total_hours_worked=Sum('hours_worked'))
+    else:
+        activity_logs = ActivityLogs.objects.filter(
+            user_id__in=users,
+            date__range=[start_date, end_date],
+            project_id=project_id
+        ).values('project__project_name', 'user__department__dept_name', 'user__location__loc_name').annotate(total_hours_worked=Sum('hours_worked'))
+
+
+    for log in activity_logs:
+        project_name = log["project__project_name"]
+        dept = log["user__department__dept_name"]
+        loc = log["user__location__loc_name"]
+        projects[project_name]["project"] = project_name
+        projects[project_name]["department"] = dept
+        projects[project_name]["location"] = loc
+        projects[project_name]["worked_hours"] += log["total_hours_worked"]
 
     logs["projects"] = list(projects.values())
     return logs
 
 
 def prepare_report_leaves(users, start_date, end_date):
+    """
+    Purpose: Prepares a report of leave records for specified users within a given date range.
+    
+    Parameters:
+       * users (list): A list of user objects for whom the leave records are to be retrieved.
+       * start_date (date): The start date of the period for which leave data is to be retrieved.
+       * end_date (date): The end date of the period for which leave data is to be retrieved.
+    
+    Returns:
+       * dict: A dictionary containing the leave records, structured as follows:
+                - "leaves" (list): A list of dictionaries with details about each leave record, including:
+                        - 'from' (str): The username of the user who requested the leave.
+                        - 'to' (str): The username of the user to whom the leave was requested.
+                        - 'start_date' (str): The start date of the leave.
+                        - 'end_date' (str): The end date of the leave.
+                        - 'total_leave_days' (int): The total number of leave days requested.
+                        - 'actual_leave_days' (int): The actual number of leave days excluding weekends and public holidays.
+                        - 'weekends_count' (int): The number of weekends within the leave period.
+                        - 'pub_holidays_count' (int): The number of public holidays within the leave period.
+                        - 'type' (str): The type of leave requested.
+                        - 'respond' (str): The status of the leave request ('reject', 'accept', or 'pending').
+    """
     leaves = []
     logs = {"leaves": []}
     
-    # fetch deez leave records for the specified users and time period where it\'s in users
+    # fetch deez leave records for the specified users and time period where it's in users
     leaves_queryset = Leave.objects.filter(
         from_user__in=users,
         start_date__lte=end_date,
@@ -378,30 +503,80 @@ def prepare_report_leaves(users, start_date, end_date):
 
 
 def prepare_report_expected_projects_workes(users: list[CustomUser], project_id: int, total_hours: int, date_start: date, date_end: date):
-    project_data = defaultdict(lambda: {'total':0, 'percentage': 0})
-    total_worked_hours:float = 0
-    for user in users:
-        activity_logs = get_activity_logs(user.id, project_id, date_start, date_end)
-        for activity_log in activity_logs:
-            project_name = activity_log.project.project_name
+    """
+    Purpose: Prepares a report of expected project work for specified users within a given date range,
+             calculating the total and percentage of hours worked on each project.
 
-            project_data[project_name]['total'] += activity_log.hours_worked
-            total_worked_hours+=activity_log.hours_worked
+    Parameters:
+       * users (list[CustomUser]): A list of CustomUser objects for whom the project work report is to be generated.
+       * project_id (int): The ID of the project to filter by. If "all", data for all projects will be included.
+       * total_hours (int): The total expected hours to be worked on the projects.
+       * date_start (date): The start date of the period for which data is to be retrieved.
+       * date_end (date): The end date of the period for which data is to be retrieved.
 
-    projects:Project
+    Returns:
+       * tuple: Contains two elements:
+                - project_data (dict): A dictionary with project names as keys, each containing:
+                        - 'total' (float): The total hours worked on the project.
+                        - 'percentage' (float): The percentage of total expected hours dedicated to the project.
+                - total_worked_hours (float): The total hours worked by all users within the specified date range.
+    """
+    project_data = defaultdict(lambda: {'total': 0, 'percentage': 0})
+
+    activity_logs: list[ActivityLogs]
     if project_id == "all":
-        projects = Project.objects.all()
+        activity_logs = ActivityLogs.objects.filter(
+            user_id__in=users,
+            date__range=[date_start, date_end],
+        ).values('project__project_name').annotate(total_hours_worked=Sum('hours_worked'))
     else:
-        projects = Project.objects.filter(id=int(project_id))
+        activity_logs = ActivityLogs.objects.filter(
+            user_id__in=users,
+            date__range=[date_start, date_end],
+            project_id=project_id
+        ).values('project__project_name').annotate(total_hours_worked=Sum('hours_worked'))
+
+    # Aggregate the total worked hours
+    total_worked_hours = 0
+    for log in activity_logs:
+        project_name = log['project__project_name']
+        project_hours = log['total_hours_worked']
+        project_data[project_name]['total'] += project_hours
+        total_worked_hours += project_hours
+
+    # Fetch project details
+    projects = Project.objects.all() if project_id == "all" else Project.objects.filter(id=project_id)
 
     for project in projects:
-        project_data[project.project_name]['percentage'] = (project_data[project.project_name]['total']*100 / total_hours)\
-                if total_hours > 0 else 0
+        project_name = project.project_name
+        if total_hours > 0:
+            project_data[project_name]['percentage'] = (project_data[project_name]['total'] * 100 / total_hours)
+        else:
+            project_data[project_name]['percentage'] = 0
 
     return project_data, total_worked_hours
 
 
 def prepare_report_pro_act_percentages(users: list[CustomUser], total_hours, date_start: date, date_end: date):
+    """
+    Purpose: Prepares a report of project and activity percentages for specified users within a given date range,
+             calculating the total hours worked on each project and activity and their respective percentages.
+
+    Parameters:
+       * users (list[CustomUser]): A list of CustomUser objects for whom the project and activity percentages report is to be generated.
+       * total_hours (int): The total expected hours to be worked on the projects and activities.
+       * date_start (date): The start date of the period for which data is to be retrieved.
+       * date_end (date): The end date of the period for which data is to be retrieved.
+
+    Returns:
+       * tuple: Contains three elements:
+                - project_activities (dict): A nested dictionary with project names as keys and dictionaries of activity names as values,
+                                            each containing the total hours worked on the activity within the project.
+                - project_percentages (dict): A dictionary with project names as keys and the percentage of total expected hours
+                                            dedicated to each project.
+                - activity_percentages (dict): A dictionary with activity names as keys and the percentage of total expected hours
+                                            dedicated to each activity.
+    """
     project_totals = defaultdict(float)
     activity_totals = defaultdict(float)
     project_activities = defaultdict(lambda: defaultdict(float))
@@ -416,17 +591,22 @@ def prepare_report_pro_act_percentages(users: list[CustomUser], total_hours, dat
             activity_totals[activity_name] = 0
             project_activities[project_name][activity_name] = 0
 
-    for user in users:
-        activity_logs = get_activity_logs(user.id, "all", date_start, date_end)
-        for activity_log in activity_logs:
-            project_name = activity_log.project.project_name
-            activity_name = activity_log.activity.activity_name
-            hours_worked = activity_log.hours_worked
 
-            project_totals[project_name] += hours_worked
-            activity_totals[activity_name] += hours_worked
+    activity_logs = ActivityLogs.objects.filter(
+        user_id__in=users,
+        date__range=[date_start, date_end],
+    ).values('project__project_name', 'activity__activity_name').annotate(total_hours_worked=Sum('hours_worked'))
 
-            project_activities[project_name][activity_name] += hours_worked
+
+    for activity_log in activity_logs:
+        project_name = activity_log["project__project_name"]
+        activity_name = activity_log["activity__activity_name"]
+        hours_worked = activity_log["total_hours_worked"]
+
+        project_totals[project_name] += hours_worked
+        activity_totals[activity_name] += hours_worked
+
+        project_activities[project_name][activity_name] += hours_worked
 
     # Calculate percentages
     project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
