@@ -20,6 +20,10 @@ options.forEach(function (option) {
   }
 });
 
+function capitalizeName(name) {
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 $.ajaxSetup({
   beforeSend: function (xhr, settings) {
     if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -95,7 +99,7 @@ $(document).ready(function () {
         users.push(all.user.name);
         var col_head = $("<tr>").appendTo(logs_table_body);
         $("<th class='table-head-color'>")
-          .text(all.user.name)
+          .text(capitalizeName(all.user.name))
           .appendTo(col_head);
 
         for (let i = 0; i < response.length; i++) {

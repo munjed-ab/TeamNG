@@ -625,7 +625,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
         project_name = pro.project_name
         project_totals[project_name] = 0
         for user in users:
-            username = user.username
+            username = user.first_name + " " + user.last_name
             user_totals[username] = 0
             project_users[project_name][username] = 0
 
@@ -633,12 +633,12 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
     activity_logs = ActivityLogs.objects.filter(
         user_id__in=users,
         date__range=[date_start, date_end],
-    ).values('project__project_name', 'user__username').annotate(total_hours_worked=Sum('hours_worked'))
+    ).values('project__project_name', 'user__first_name', 'user__last_name').annotate(total_hours_worked=Sum('hours_worked'))
 
 
     for activity_log in activity_logs:
         project_name = activity_log["project__project_name"]
-        username = activity_log["user__username"]
+        username = activity_log["user__first_name"] + " " + activity_log["user__last_name"]
         hours_worked = activity_log["total_hours_worked"]
 
         project_totals[project_name] += hours_worked
