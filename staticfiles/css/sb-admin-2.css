@@ -1593,7 +1593,7 @@ pre code {
 }
 
 #TableToExport {
-  font-size: smaller;
+  font-size: x-small;
   font-family: sans-serif;
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
@@ -1601,7 +1601,7 @@ pre code {
 }
 
 #TableInModal {
-  font-size: smaller;
+  font-size: x-small;
   font-family: sans-serif;
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
@@ -1622,7 +1622,7 @@ pre code {
 }
 
 .table thead th {
-  vertical-align: bottom;
+  vertical-align: middle;
   border-bottom: 2px solid #e3e6f0;
 }
 
