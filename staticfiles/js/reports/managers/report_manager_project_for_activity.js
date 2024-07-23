@@ -1,10 +1,14 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
-const activities_count = JSON.parse(
+var activities_count = JSON.parse(
   document.getElementById("activities_count").textContent
 );
-const projects_count = JSON.parse(
+var projects_count = JSON.parse(
   document.getElementById("projects_count").textContent
 );
+
+activities_count = activities_count + 1;
+projects_count = projects_count + 1;
+
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
 
@@ -79,7 +83,7 @@ $(document).ready(function () {
     var row_head = $("<tr>").appendTo(header_table);
     $("<th>")
       .html(
-        `<i id='expand' style='display: flex; justify-content: center;cursor:pointer;' class='fa fa-expand fa-4x' aria-hidden='true'></i>`
+        `<i id='expand' style='display: flex; justify-content: center;cursor:pointer;' class='fa fa-arrows-alt fa-4x' aria-hidden='true'></i>`
       )
       .appendTo(row_head);
 
@@ -96,27 +100,43 @@ $(document).ready(function () {
             $("<td>").text(response[i].hours_worked).appendTo(col_head);
           }
         }
-
+        $("<td>")
+          .text(`${parseFloat(all.activity.total_hours).toFixed(2)}`)
+          .appendTo(col_head);
         $("<td>")
           .text(`${parseFloat(all.activity.percentage).toFixed(2)}%`)
           .appendTo(col_head);
       }
     });
 
+    var col_pro_tot = $("<tr>").appendTo(logs_table_body);
     var col_pro_per = $("<tr>").appendTo(logs_table_body);
-    $("<th class='table-head-color'>").text("Percentage").appendTo(col_pro_per);
+    $("<th class='table-head-color bg-primary'>")
+      .text("Total hours")
+      .appendTo(col_pro_tot);
+    $("<th class='table-head-color bg-primary'>")
+      .text("Percentage")
+      .appendTo(col_pro_per);
+
     response.forEach((all) => {
       if (!projects.includes(all.project.name)) {
         projects.push(all.project.name);
 
         $("<th>").text(all.project.name).appendTo(row_head);
         $("<td>")
+          .text(`${parseFloat(all.project.total_hours).toFixed(2)}`)
+          .appendTo(col_pro_tot);
+        $("<td>")
           .text(`${parseFloat(all.project.percentage).toFixed(2)}%`)
           .appendTo(col_pro_per);
       }
     });
-
-    $("<th>").text("Percentage").appendTo(row_head);
+    $("<th class='table-head-color bg-primary'>")
+      .text("Total hours")
+      .appendTo(row_head);
+    $("<th class='table-head-color bg-primary'>")
+      .text("Percentage")
+      .appendTo(row_head);
   }
 
   $("#month-filter, #year-filter, #project-filter, #user-filter").change(
@@ -140,7 +160,7 @@ $(document).ready(function () {
       ws["!cols"] = Array(25).fill({ wpx: 80 });
       ws["!rows"] = [{ hpx: 30 }];
       let cells = "BCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-      for (let index = 2; index < activities_count + 3; index++) {
+      for (let index = 2; index < activities_count + 4; index++) {
         if (ws[`A${index}`]) {
           if (ws[`A${index}`].v == "Percentage") {
             cells.forEach((cell) => {
@@ -154,7 +174,7 @@ $(document).ready(function () {
 
       if (ws[`${cells[projects_count]}1`]) {
         if ((ws[`${cells[projects_count]}1`].v = "Percentage")) {
-          for (let index = 2; index < activities_count + 3; index++) {
+          for (let index = 2; index < activities_count + 4; index++) {
             if (ws[`${cells[projects_count]}${index}`]) {
               ws[`${cells[projects_count]}${index}`].z = "0.00%";
             }

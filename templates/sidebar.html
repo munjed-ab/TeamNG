@@ -135,8 +135,15 @@
           href="{% url 'report_manager_pro_act' request.user.id %}"
           >Project/Activity Type</a
         >
+        <a
+          class="collapse-item"
+          href="{% url 'report_manager_pro_user' request.user.id %}"
+          >Project/User</a
+        >
       </div>
       {% elif request.user.role.name == "Admin" or request.user.role.name == "Director" %}
+      
+
       <div class="bg-white py-2 collapse-inner rounded">
         <h6 class="collapse-header">Reports:</h6>
         <a
@@ -170,6 +177,11 @@
           href="{% url 'report_admin_pro_act' request.user.id %}"
           >Project/Activity Type</a
         >
+        <a
+          class="collapse-item"
+          href="{% url 'report_admin_pro_user' request.user.id %}"
+          >Project/User</a
+        >
       </div>
       {% elif request.user.role.name == "Employee" %}
       <div class="bg-white py-2 collapse-inner rounded">
@@ -198,6 +210,11 @@
           class="collapse-item"
           href="{% url 'report_user_pro_act' request.user.id%}"
           >Project/Activity Type</a
+        >
+                <a
+          class="collapse-item"
+          href="{% url 'report_user_pro_user' request.user.id %}"
+          >Project/User</a
         >
       </div>
       {% endif %}

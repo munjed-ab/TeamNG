@@ -611,7 +611,45 @@ def prepare_report_pro_act_percentages(users: list[CustomUser], total_hours, dat
     # Calculate percentages
     project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
     activity_percentages = {activity_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for activity_name, hours in activity_totals.items()}
-    return project_activities, project_percentages, activity_percentages
+    return project_activities, project_percentages, activity_percentages, project_totals, activity_totals
+
+
+def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, date_start: date, date_end: date):
+
+    project_totals = defaultdict(float)
+    user_totals = defaultdict(float)
+    project_users = defaultdict(lambda: defaultdict(float))
+
+    _projects = Project.objects.all()
+    for pro in _projects:
+        project_name = pro.project_name
+        project_totals[project_name] = 0
+        for user in users:
+            username = user.username
+            user_totals[username] = 0
+            project_users[project_name][username] = 0
+
+
+    activity_logs = ActivityLogs.objects.filter(
+        user_id__in=users,
+        date__range=[date_start, date_end],
+    ).values('project__project_name', 'user__username').annotate(total_hours_worked=Sum('hours_worked'))
+
+
+    for activity_log in activity_logs:
+        project_name = activity_log["project__project_name"]
+        username = activity_log["user__username"]
+        hours_worked = activity_log["total_hours_worked"]
+
+        project_totals[project_name] += hours_worked
+        user_totals[username] += hours_worked
+
+        project_users[project_name][username] += hours_worked
+
+    # Calculate percentages
+    project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
+    user_percentages = {username: ((hours / total_hours) * 100) if total_hours>0 else 0 for username, hours in user_totals.items()}
+    return project_users, project_percentages, user_percentages, project_totals, user_totals
 
 
 ##########################################################################
@@ -1171,7 +1209,7 @@ def get_user_pro_act_report(request, pk):
             daily_hours_total = users.first().daily_hours
             total_hours = daily_hours_total * total_days
 
-            project_activities, project_percentages, activity_percentages =\
+            project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
 
             filtered_data = {"report": []}
@@ -1180,8 +1218,55 @@ def get_user_pro_act_report(request, pk):
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {
-                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
-                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "project": {"name": project_name, "total_hours":project_totals[project_name] ,"percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "total_hours":activity_totals[activity_name] ,"percentage": activity_percentages.get(activity_name, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_user_pro_user_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = int(pk)
+
+        if month and year and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+
+            users = CustomUser.objects.filter(
+                id = user_id,
+                is_superuser = False
+            )
+            total_hours:int = 0
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+            daily_hours_total = users.first().daily_hours
+            total_hours = daily_hours_total * total_days
+
+            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+                  prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
+
+            filtered_data = {"report": []}
+
+            # append project and activity to filtered data
+            for project_name, users in project_users.items():
+                for username, hours_worked in users.items():
+                    project_info = {
+                        "project": {"name": project_name, "total_hours":project_totals[project_name], "percentage": project_percentages.get(project_name, 0)},
+                        "user": {"name": username, "total_hours":user_totals[username], "percentage": user_percentages.get(username, 0)},
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
@@ -1521,7 +1606,7 @@ def get_manager_pro_act_report(request, pk):
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
             total_hours = daily_hours_total * total_days
 
-            project_activities, project_percentages, activity_percentages =\
+            project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
 
             filtered_data = {"report": []}
@@ -1530,8 +1615,8 @@ def get_manager_pro_act_report(request, pk):
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {
-                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
-                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "project": {"name": project_name, "total_hours":project_totals[project_name] ,"percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "total_hours":activity_totals[activity_name] ,"percentage": activity_percentages.get(activity_name, 0)},
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
@@ -1542,7 +1627,57 @@ def get_manager_pro_act_report(request, pk):
     except:
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
-    
+
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_manager_pro_user_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        manager_id = int(pk)
+        if month and year and manager_id and user_id:
+            start_date, end_date = get_start_end_date(month, year)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+
+            total_hours:int = 0
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
+
+            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+                  prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
+
+            filtered_data = {"report": []}
+
+            # append project and activity to filtered data
+            for project_name, users in project_users.items():
+                for username, hours_worked in users.items():
+                    project_info = {
+                        "project": {"name": project_name, "total_hours":project_totals[project_name], "percentage": project_percentages.get(project_name, 0)},
+                        "user": {"name": username, "total_hours":user_totals[username], "percentage": user_percentages.get(username, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
 
 
 
@@ -1848,7 +1983,7 @@ def get_admin_pro_act_report(request, pk):
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
             total_hours = daily_hours_total * total_days
 
-            project_activities, project_percentages, activity_percentages =\
+            project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
 
             filtered_data = {"report": []}
@@ -1857,8 +1992,8 @@ def get_admin_pro_act_report(request, pk):
             for project_name, activities in project_activities.items():
                 for activity_name, hours_worked in activities.items():
                     project_info = {
-                        "project": {"name": project_name, "percentage": project_percentages.get(project_name, 0)},
-                        "activity": {"name": activity_name, "percentage": activity_percentages.get(activity_name, 0)},
+                        "project": {"name": project_name, "total_hours":project_totals[project_name] ,"percentage": project_percentages.get(project_name, 0)},
+                        "activity": {"name": activity_name, "total_hours":activity_totals[activity_name] ,"percentage": activity_percentages.get(activity_name, 0)},
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
@@ -1898,4 +2033,59 @@ def get_holiday_report(request):
         messages.error(request, "Something went wrong :(")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
+
+@api_view(['GET'])
+@ensure_csrf_cookie
+@authentication_classes([SessionAuthentication, BasicAuthentication])
+@permission_classes([IsAuthenticated])
+def get_admin_pro_user_report(request, pk):
+    try:
+        month = request.GET.get("month")
+        year = request.GET.get("year")
+        user_id = request.GET.get("user")
+        department_id = request.GET.get("department")
+        admin_id = int(pk)
+        if month and year and admin_id and user_id and department_id:
+            start_date, end_date = get_start_end_date(month, year)
+            dir = Role.objects.get(name="Director")
+            users = CustomUser.objects.filter(
+                ~Q(role=dir.id),
+                ~Q(is_superuser=True)
+            )
+
+            if user_id != "all":
+                users = users.filter(id=int(user_id))
+            if department_id != "all":
+                users = users.filter(department=int(department_id))
+
+            total_hours:int = 0
+
+            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
+            total_days = len(filtered_dates_satge1)
+
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            total_hours = daily_hours_total * total_days
+
+            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+                  prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
+
+
+            filtered_data = {"report": []}
+
+            # append project and activity to filtered data
+            for project_name, users in project_users.items():
+                for username, hours_worked in users.items():
+                    project_info = {
+                        "project": {"name": project_name, "total_hours":project_totals[project_name], "percentage": project_percentages.get(project_name, 0)},
+                        "user": {"name": username, "total_hours":user_totals[username], "percentage": user_percentages.get(username, 0)},
+                        "hours_worked": hours_worked
+                    }
+                    filtered_data["report"].append(project_info)
+            return JsonResponse(filtered_data)
+        else:
+            messages.error(request, "Something wrong :(")
+            return JsonResponse({"error": "Invalid request"}, status=405)
+    except:
+        messages.error(request, "Something went wrong :(")
+        return JsonResponse({"error": "Invalid request"}, status=405)
 

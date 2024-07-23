@@ -230,6 +230,42 @@ def report_manager_pro_act(request, pk):
     }
     return render(request, "project_manager/reports/managers/report_manager_pro_act.html", context)
 
+
+def report_manager_pro_user(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+    elif not request.user.role.name=="Manager":
+        messages.error(request,
+        "Access Denied.")
+        return redirect("dashboard")
+    
+    user = CustomUser.objects.get(id=pk)
+    dir = Role.objects.get(name="Director")
+    adm = Role.objects.get(name="Admin")
+    users = CustomUser.objects.filter(
+        ~Q(is_superuser=True),
+        ~Q(role=dir.id),
+        ~Q(role=adm.id),
+        department=user.department.id,
+        location=user.location.id
+    ).order_by("username")
+    
+    projects_count = Project.objects.all().count()
+    users_count = CustomUser.objects.all().count()
+
+    context = {
+        "user" : user,
+        "users":users,
+        "projects_count":projects_count,
+        "users_count":users_count
+    }
+    return render(request, "project_manager/reports/managers/report_manager_pro_user.html", context)
+
+
 def report_manager_missed_hours(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")

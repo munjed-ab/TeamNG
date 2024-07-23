@@ -969,3 +969,21 @@ def report_user_pro_act(request, pk):
         "activities_count":activities_count
     }
     return render(request, "project_manager/reports/users/report_user_pro_act.html", context)
+
+
+def report_user_pro_user(request, pk):
+    if not request.user.is_authenticated:
+        return redirect("login")
+    elif request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        return redirect("login")
+
+    user = CustomUser.objects.get(id=pk)
+    projects_count = Project.objects.count()
+
+    context = {
+        "user" : user,
+        "projects_count":projects_count
+    }
+    return render(request, "project_manager/reports/users/report_user_pro_user.html", context)
