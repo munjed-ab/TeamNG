@@ -399,9 +399,9 @@ def update_entry(request, pk):
             # Check if hours entered are not None (always gonna be :) and Decimal it. else -> return
             if hours is not None:
                 hours = Decimal(hours)
-                if hours + get_hours_worked_on_date(user, date_picked) >= 20:
-                    messages.error(request,"Canceled. \
-                    You exeeded 20 hours on {date_picked}.")
+                if hours + get_hours_worked_on_date(user, date_picked) > user.daily_hours:
+                    messages.error(request,f"Canceled. \
+                    You exeeded {user.daily_hours} hours on {date_picked}.")
                     return redirect("activitylogs")
             else:
                 messages.error(request,"Canceled. \
