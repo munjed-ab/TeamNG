@@ -1,6 +1,6 @@
 # Employee Management System
 
-This Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and analysis overview. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports (still under development) and resetting passwords via email confirmation.
+This Employee Management System is a web application designed for a company to manage employee work hours, project activities, leave requests, and analysis overview. It provides functionality for employees to log their work hours, request leave, and view their work statistics. Managers can oversee the work of employees within their department and location, while admins have access to all user data for monitoring and reporting purposes. The system also includes features for generating reports and resetting passwords via email confirmation.
 
 ## Features
 
@@ -31,7 +31,6 @@ This Employee Management System is a web application designed for a company to m
 
 **SheetJS:** A JavaScript library for reading and writing data from spreadsheets.
 
-
 ## License
 
 Redis: [RSALV2](https://redis.io/legal/rsalv2-agreement/) License
@@ -43,7 +42,6 @@ FullCalendar: [MIT](https://fullcalendar.io/license) License
 SB Admin 2 Template: [MIT](https://github.com/twbs/bootstrap/blob/main/LICENSE) License
 
 SheetJS: [Apache](https://git.sheetjs.com/sheetjs/sheetjs/src/commit/f80478703388a69b953f9be35506e3f78afb8a04/dist/LICENSE) License
-
 
 ## Authors
 
