@@ -217,7 +217,7 @@ function setColorGradient(info) {
  * @return {string} The calculated color in the format "rgb(r, g, b)".
  */
 function calculateColor(hoursWorked) {
-  const least = [54, 185, 204]; //our last color :113, 155, 161 .rgb(99 139 145) old:140, 199, 207 ,,new rgb(127 148 151)
+  const least = [113, 155, 161]; //our last color :113, 155, 161 .rgb(99 139 145) old:140, 199, 207 ,,new rgb(127 148 151)
   const middle = [99, 136, 199];
   const most = [43, 166, 98];
 
