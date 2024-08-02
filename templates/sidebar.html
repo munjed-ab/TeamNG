@@ -39,7 +39,7 @@
   <li class="nav-item {% if request.path == '/dashboard/' %}active{% endif %}">
     <a class="nav-link" href="{% url 'dashboard' %}">
       <i class="fas fa-fw fa-user"></i>
-      <span>User Dashboard</span></a
+      <span>{{ request.user.username|capfirst }} Dashboard</span></a
     >
   </li>
 
