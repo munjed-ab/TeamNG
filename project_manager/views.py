@@ -111,7 +111,7 @@ def get_hours_worked_on_date(user, date):
     entrylogs = ActivityLogs.objects.filter(
 Q(date=date, user = user)
 )
-    hours_worked_on_date = sum(entry.hours_worked for entry in entrylogs)
+    hours_worked_on_date = sum(Decimal(entry.hours_worked) for entry in entrylogs)
     return hours_worked_on_date
 
 
@@ -399,7 +399,8 @@ def update_entry(request, pk):
             # Check if hours entered are not None (always gonna be :) and Decimal it. else -> return
             if hours is not None:
                 hours = Decimal(hours)
-                if hours + get_hours_worked_on_date(user, date_picked) > user.daily_hours:
+                left_hours_on_date = get_hours_worked_on_date(user, date_picked) - Decimal(old_entry.hours_worked)
+                if hours + left_hours_on_date > user.daily_hours:
                     messages.error(request,f"Canceled. \
                     You exeeded {user.daily_hours} hours on {date_picked}.")
                     return redirect("activitylogs")
