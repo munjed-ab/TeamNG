@@ -14,6 +14,7 @@
 
   <!-- Divider -->
   <hr class="sidebar-divider my-0" />
+  <div class="sidebar-heading">Dashboard</div>
   {% if request.user.ov or request.user.role.name == "Admin" or request.user.role.name == "Director" %}
   <!-- Nav Item - Overview -->
   <li
@@ -249,9 +250,11 @@
           >Activity Types</a
         >
         <a class="collapse-item" href="{% url 'holidays' %}">Holidays</a>
+        {% if request.user.is_superuser %}
         <a class="collapse-item" href="{% url 'locations' %}"
           >Projects Locations</a
         >
+        {% endif %}
       </div>
     </div>
   </li>
@@ -286,5 +289,6 @@
       </div>
     </div>
   </li>
-  <!-- End of Sidebar -->
+
 </ul>
+  <!-- End of Sidebar -->

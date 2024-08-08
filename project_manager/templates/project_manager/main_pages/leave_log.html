@@ -44,22 +44,22 @@
           </td>
           <td>
             {% if not request.is_approved and not request.is_rejected %}
-
-            <div class="update-icon float-left">
-              <!-- Update Icon -->
-              <a href="{% url 'update_leave' request.id %}">
-                <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
-                <!-- Adjust size with fa-2x, fa-3x, etc. -->
-              </a>
+            <div class="row">
+              <div class="update-icon col-sm-6 col-xs-6">
+                <!-- Update Icon -->
+                <a href="{% url 'update_leave' request.id %}">
+                  <i class="fas fa-pencil-alt mr-2 text-primary fa-1x"></i>
+                  <!-- Adjust size with fa-2x, fa-3x, etc. -->
+                </a>
+              </div>
+              <div class="delete-icon col-sm-6 col-xs-6">
+                <!-- Delete Icon -->
+                <a href="{% url 'delete_leave' request.id %}">
+                  <i class="fas fa-trash-alt mr-5 text-danger fa-1x"></i>
+                  <!-- Adjust size with fa-2x, fa-3x, etc. -->
+                </a>
+              </div>
             </div>
-            <div class="delete-icon float-right">
-              <!-- Delete Icon -->
-              <a href="{% url 'delete_leave' request.id %}">
-                <i class="fas fa-trash-alt mr-5 text-danger fa-1x"></i>
-                <!-- Adjust size with fa-2x, fa-3x, etc. -->
-              </a>
-            </div>
-
             {% else %} _ {% endif %}
           </td>
         </tr>

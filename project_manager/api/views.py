@@ -1,14 +1,12 @@
 from django.http import JsonResponse
 from django.db.models import F, Sum, Q
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from project_manager.models import ActivityLogs, Holiday, Leave, Project, Activity, CustomUser
-from ..models import Role
-from django.contrib.auth import get_user_model
+from project_manager.models import Role
 from django.db import transaction
 from django.contrib import messages
 import calendar
@@ -16,7 +14,7 @@ import pandas as pd
 import json
 from decimal import Decimal
 from django.views.decorators.http import require_POST
-from ..views import get_filtered_dates
+from project_manager.views import get_filtered_dates, check_location, is_saturday, get_hours_worked_on_date
 from collections import defaultdict
 
 
@@ -31,6 +29,72 @@ from collections import defaultdict
 #               |_|                                                             #
 #################################################################################
 
+HOURS_ON_SAT = 3
+
+def get_working_saturdays(start_date:str, end_date:str, users: list[CustomUser] = None, user: CustomUser = None):
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+    public_holidays = Holiday.objects.filter(holiday_date__range = [start_date, end_date])
+
+    date_range = pd.date_range(start=start_date, end=end_date)
+
+    # get all saterdays
+    saturdays = [date for date in date_range if date.dayofweek == 5]
+    banned_saterdays = [
+        saturday
+        for saturday in saturdays
+        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
+    ]
+
+    filtered_dates = [date for date in saturdays if date not in banned_saterdays]
+
+    holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
+    # exclude public holidays
+    filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
+    if user and not users:
+        leaves = Leave.objects.filter(
+            from_user=user.id,
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        )
+    else:
+        leaves = Leave.objects.filter(
+            from_user_id__in=users,
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        )
+    leave_dates_all = []
+    for leave in leaves:
+        leave_dates_all += leave_start_end_cut(start_date, end_date, leave.start_date.ctime(), leave.end_date.ctime())
+
+    leave_dates = []
+    leave_dates = [date for date in leave_dates_all if date not in leave_dates]
+    filtered_dates = [date for date in filtered_dates if date not in leave_dates]
+
+    return len(filtered_dates)
+
+
+def get_working_saturdays_in_leave(start_date:str, end_date:str):
+    start_date = pd.Timestamp(start_date)
+    end_date = pd.Timestamp(end_date)
+    public_holidays = Holiday.objects.filter(holiday_date__range = [start_date, end_date])
+
+    date_range = pd.date_range(start=start_date, end=end_date)
+
+    # get all saterdays
+    saturdays = [date for date in date_range if date.dayofweek == 5]
+    banned_saterdays = [
+        saturday
+        for saturday in saturdays
+        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
+    ]
+    filtered_dates = [date for date in saturdays if date not in banned_saterdays]
+
+    holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
+    # exclude public holidays
+    filtered_dates = [date for date in filtered_dates if date not in holiday_dates]
+
+    return len(filtered_dates)
 
 def leave_start_end_cut(start_cut:str, end_cut:str, start_leave:str, end_leave:str):
     """
@@ -107,28 +171,32 @@ def get_activity_logs(user_id: int, project_id: int, order_start: date, order_en
         return ActivityLogs.objects.filter(user=user_id, date__range=[order_start, order_end], project=project_id)
 
 
-def calculate_public_holidays(order_start: date, order_end: date, users: list[CustomUser]):
+def calculate_public_holidays(order_start: date, order_end: date, users: list[CustomUser] = None, user:CustomUser = None):
     """
     Calculates the total number of public holiday hours within a time period for given some users.
     """
     pub_holidays = Holiday.objects.filter(
         holiday_date__range=[order_start, order_end]
     ).count()
+    if user and not users:
+        daily_hours_total = Decimal(user.daily_hours)
+    else:
+        daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
 
-    daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
     hours_pub_holiday = pub_holidays * daily_hours_total
     return hours_pub_holiday
 
 
-def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: date) -> int:
+def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: date, with_days:bool=False):
     """
     Purpose: Calculates the total number of leave days taken by users within a time period.\n
     Parameters:
        * users: List of users.
        * order_start: The start date of the time period.
        * order_end: The end date of the time period.
+       * with_days: specify if the programmer wants to return the leave days too.
 
-    Returns: The total number of leave days hours taken by users.
+    Returns: The total number of leave hours days or and leave days taken by users.
     """
 
     leave_requests = Leave.objects.filter(
@@ -137,29 +205,44 @@ def calculate_leave_days(users: list[CustomUser], order_start: date, order_end: 
         start_date__lte=order_end,
         end_date__gte=order_start
     )
+
     
     hours_leave_days = 0
+    leave_days = 0
     for leave_request in leave_requests:
+        
         leave_start = max(leave_request.start_date, order_start)
         leave_end = min(leave_request.end_date, order_end)
+
+        saturdays = get_working_saturdays_in_leave(leave_start.ctime(), leave_end.ctime())
+        sat_hours = (saturdays * HOURS_ON_SAT)
+
         filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
-        
-        hours_leave_days += len(filtered_dates) * leave_request.from_user.daily_hours
-    
-    return hours_leave_days
+        leave_days+=len(filtered_dates)
+        total_days = len(filtered_dates) - saturdays
+        hours_leave_days += total_days * leave_request.from_user.daily_hours
+        hours_leave_days += sat_hours
+
+    if with_days:
+        return hours_leave_days, leave_days
+    else:
+        return hours_leave_days
 
 
-def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: date)-> int:
+def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: date, with_days:bool=False):
     """
-    Purpose: Calculates the total number of leave days taken by user within a time period.\n
+    Purpose: Calculates the total number of leave days taken by user within a time period.
+
     Parameters:
        * user: a user.
        * order_start: The start date of the time period.
        * order_end: The end date of the time period.
+       * with_days: specify if the programmer wants to return the leave days too.
 
-    Returns: The total number of leave hours days taken by users.
+    Returns: The total number of leave hours days or and leave days taken by users.
     """
     hours_leave_days = 0
+    leave_days = 0
 
     approved_leave_requests = Leave.objects.filter(
         from_user=user.id,
@@ -167,18 +250,28 @@ def calculate_leave_days_user(user: CustomUser, order_start: date, order_end: da
         start_date__lte=order_end,
         end_date__gte=order_start
     )
+
     for leave_request in approved_leave_requests:
         leave_start = max(leave_request.start_date, order_start)
         leave_end = min(leave_request.end_date, order_end)
+        saturdays = get_working_saturdays_in_leave(leave_start.ctime(), leave_end.ctime())
+        sat_hours = (saturdays * HOURS_ON_SAT)
         filtered_dates = get_filtered_dates(leave_start.ctime(), leave_end.ctime())
-        hours_leave_days += len(filtered_dates) * user.daily_hours
-    return hours_leave_days
+        leave_days+=len(filtered_dates)
+        total_days = len(filtered_dates) - saturdays
+        hours_leave_days += total_days * user.daily_hours
+        hours_leave_days += sat_hours
+
+    if with_days:
+        return hours_leave_days, leave_days
+    else:
+        return hours_leave_days
 
 
 def calculate_project_and_activity_data(users, project_id, date_start, date_end):
     """
-    Purpose: Calculates and returns data on the total hours worked on projects and activities by users
-             within a specified date range.
+    Purpose:
+                Calculates and returns data on the total hours worked on projects and activities by users within a specified date range.
 
     Parameters:
        * users (list[CustomUser]): A list of user objects for which the activity logs are to be retrieved.
@@ -252,7 +345,8 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
        * hours_leave_days: Total leave hours.
        * hours_pub_holiday: Total public holiday hours.
 
-    Returns: A dictionary containing the prepared response data.
+    Returns: 
+            A dictionary containing the prepared response data.
     """
     filtered_data = {
         "projects": [],
@@ -355,7 +449,8 @@ def getUserSupervisor(user: CustomUser):
 
 def prepare_report_activity_logs(users, project_id, start_date, end_date):
     """
-    Purpose: Prepares a report of activity logs for specified users and project within a given date range.
+    Purpose:
+                Prepares a report of activity logs for specified users and project within a given date range.
     
     Parameters:
        * users (list): A list of user objects for whom the activity logs are to be retrieved.
@@ -628,6 +723,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
             username = user.first_name + " " + user.last_name
             user_totals[username] = 0
             project_users[project_name][username] = 0
+            
 
 
     activity_logs = ActivityLogs.objects.filter(
@@ -646,10 +742,97 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
 
         project_users[project_name][username] += hours_worked
 
+
+#TODO: make up your mind about whether to consider the leave a project or execlude the leeave hours
+    # for user in users:
+    #     username = user.first_name + " " + user.last_name
+    #     hours_leave_days = calculate_leave_days_user(user, date_start, date_end)
+    #     project_users["leave"][username] = hours_leave_days
+    #     project_totals.update({"leave":hours_leave_days})
+    #     user_totals[username] += hours_leave_days
+#like here v
+    # for user in users:
+    #     hours_leave_days = calculate_leave_days_user(user, date_start, date_end)
+    #     total_hours-=hours_leave_days
+
     # Calculate percentages
     project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
     user_percentages = {username: ((hours / total_hours) * 100) if total_hours>0 else 0 for username, hours in user_totals.items()}
     return project_users, project_percentages, user_percentages, project_totals, user_totals
+
+
+def calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users:list[CustomUser] = None, user:CustomUser = None):
+    """
+    # Parameters:
+
+         - start_date: the start of the date filter Date object.
+        
+         - end_date: the end of the date filter Date object.
+         
+         - daily_hours_total: the total number of daily hours for selected users (from user.daily_hours)
+
+         - working_saturdays: the number of working saturdays from start_date to end_date (1st, 2nd, 5th)
+
+         - users: a list of users [CustomUser] objects [Optional].
+
+         - user: a user [CustomUser] object [Optional].
+
+    # Explanation:
+         - HOURS_ON_SAT: the number of working hours on saturdays for every user.
+        
+         - total_days: has the number of days between start_date and end_date execluding (weekly holidays)
+                      and (leave days) and (working saturdays) and (public holidays).
+        
+         - daily_hours_total: the total number of daily hours for selected users (from user.daily_hours)
+        
+         - total_hours: (daily_hours_total * total_days) + (working_saturdays * users.count() * HOURS_ON_SAT)
+        
+         - hours_leave_days: the number of hours of leaves for all users from start_date to end_date.
+        
+         - total_hours_wleave: total_hours + leave days hours + (working_saturdays * users.count() * HOURS_ON_SAT)
+        
+         - working_saturdays: the number of working saturdays from start_date to end_date (1st, 2nd, 5th)
+    # Returns:
+         - total_hours
+         - total_hours_wleave
+         - hours_leave_days
+         - hours_pub_holiday
+    """
+    # getting the list of filtered days without weekly holidays
+    total_days_list = get_filtered_dates(start_date, end_date, with_holidays=False)
+
+    # getting the number of hours and days of leaves for all users
+    if user and not users:
+        hours_leave_days, leave_days = calculate_leave_days_user(user, start_date, end_date, with_days=True)
+    else:
+        hours_leave_days, leave_days = calculate_leave_days(users, start_date, end_date, with_days=True)
+    
+    # calculating the total number of expected working days (we will add the working saturdays later for 3 hours)
+    total_days = len(total_days_list) - leave_days - working_saturdays
+    # first we calculate the total hours by multiplying the previous daily hours with the total days above
+    total_hours = daily_hours_total * total_days
+
+    # total hours with leave this is for calculating the percentage of leave project from the expected total hours
+    # and since we subtract the leave days before from the total hours we add the leave hours here
+    total_hours_wleave = total_hours + hours_leave_days
+
+    if user and not users:
+        # since the total hours has no working saturdays now we add the sat to the total hours with leave
+        total_hours_wleave += (working_saturdays * HOURS_ON_SAT)
+        # and we do the same thing with the non-leave total hours
+        total_hours += (working_saturdays * HOURS_ON_SAT)
+        # calculating the public holiday hours (working saturdays in calculation in calculate_public_holidays too)
+        hours_pub_holiday = calculate_public_holidays(start_date, end_date, user=user)
+    else:
+        total_hours_wleave += (working_saturdays * users.count() * HOURS_ON_SAT)
+        total_hours += (working_saturdays * users.count() * HOURS_ON_SAT)
+        hours_pub_holiday = calculate_public_holidays(start_date, end_date, users=users)
+
+    # subtracting public holiday hours from both total hours and total hours with leave
+    total_hours -= hours_pub_holiday
+    total_hours_wleave -= hours_pub_holiday
+
+    return total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday
 
 
 ##########################################################################
@@ -667,6 +850,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
 @authentication_classes([SessionAuthentication, BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def calendar_data_view(request):
+
     try:
         if request.method == "GET":
             year = int(request.GET.get("year"))
@@ -785,6 +969,7 @@ def post_activity_data(request):
             data_dict = json.loads(data_str)
             activity_data = json.loads(data_dict['data'])
             date = activity_data[0].get("date")
+            daily_expected_hours = request.user.daily_hours
 
             if not request.user.is_authenticated:
                 messages.error(request, "Access Denied.")
@@ -794,10 +979,18 @@ def post_activity_data(request):
                 messages.error(request, "Invalid Request.")
                 return JsonResponse({"error": "Invalid request data"}, status=405)
 
-            total_hours = sum(Decimal(item["hours"]) for item in activity_data)
+            if is_saturday(date):
+                daily_expected_hours = HOURS_ON_SAT
+            
+            total_hours_to_register = sum(Decimal(item["hours"]) for item in activity_data)
+            total_hours_registered = get_hours_worked_on_date(request.user, date)
 
-            if total_hours > request.user.daily_hours:
+            total_hours = total_hours_registered + total_hours_to_register
+
+            if total_hours > daily_expected_hours:
+                messages.error(request, "Exceeded hours on saturday.")
                 return JsonResponse({"error": "Exceeded hours"}, status=405)
+
 
             with transaction.atomic():
                 project_names = set(item["project"] for item in activity_data)
@@ -865,7 +1058,8 @@ def overview_data(request):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
 
             if user_id != "all":
@@ -874,21 +1068,12 @@ def overview_data(request):
                 users = users.filter(department=int(department_id))
 
             
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
-            total_days = len(filtered_dates_satge1)
-
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
-
-            hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
-            total_hours -= hours_pub_holiday
-            total_hours_wleave = total_hours
-
-            total_hours -= hours_leave_days
-
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - Decimal(total_worked_hours)
@@ -926,22 +1111,22 @@ def overview_manager_data(request):
                 ~Q(is_superuser=True),
                 ~Q(role=dir.id),
                 ~Q(role=adm.id),
-                department=department_id,
-                location=location_id
+                department=int(department_id),
+                location=int(location_id)
             ).order_by("username")
             
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
+            total_hours:int = 0
+
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * len(get_filtered_dates(start_date, end_date, False))
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
-            total_hours -= hours_pub_holiday
-            total_hours_wleave = total_hours
-
-            total_hours -= hours_leave_days
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
@@ -974,20 +1159,12 @@ def overview_user_data(request, pk):
                     id = user_id
                 )
 
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * len(get_filtered_dates(start_date, end_date, False))
-
-            hours_leave_days = calculate_leave_days(users, start_date, end_date)
-            hours_pub_holiday = calculate_public_holidays(start_date, end_date, users)
-            total_hours -= hours_pub_holiday
-            
-            # this is for calculating the percentage of leave project from the expected total hours 
-            # before we extract the leave hours
-            total_hours_wleave = total_hours
-
-            # extracting the leave hours from the total so we could calculate the percentage of projects
-            # from the actual days a user have to work in (execluding the leave hours)
-            total_hours -= hours_leave_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
@@ -1120,29 +1297,23 @@ def get_user_overview_report(request, pk):
         if month and year and user_id and project_id:
             start_date, end_date = get_start_end_date(month, year)
 
-            user = CustomUser.objects.filter(
+            users = CustomUser.objects.filter(
                 id = user_id,
                 is_superuser = False
             )
-            total_hours:int = 0
 
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
-            total_days = len(filtered_dates_satge1)
+            # getting the total number of daily hours for selected users
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            daily_hours_total = user.first().daily_hours
-            total_hours = daily_hours_total * total_days
-
-            hours_leave_days = calculate_leave_days(user, start_date, end_date)
             hours_leave_days_percentage = 0
-            if total_hours > 0:
-                hours_leave_days_percentage = hours_leave_days*100 / total_hours
+            if total_hours_wleave > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours_wleave
 
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, user)
-            total_hours -= hours_pub_holiday
-
-            total_hours -= hours_leave_days
-
-            project_data, total_worked_hours = prepare_report_expected_projects_workes(user, project_id, total_hours, start_date, end_date)
+            project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
             total_worked_hours = Decimal(total_worked_hours)
             percent_complete = 0
             if total_hours > 0:
@@ -1202,12 +1373,13 @@ def get_user_pro_act_report(request, pk):
                 id = user_id,
                 is_superuser = False
             )
-            total_hours:int = 0
+            # getting the total number of daily hours for selected users
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-            daily_hours_total = users.first().daily_hours
-            total_hours = daily_hours_total * total_days
 
             project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -1249,12 +1421,13 @@ def get_user_pro_user_report(request, pk):
                 id = user_id,
                 is_superuser = False
             )
-            total_hours:int = 0
+            # getting the total number of daily hours for selected users
+            daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-            daily_hours_total = users.first().daily_hours
-            total_hours = daily_hours_total * total_days
 
             project_users, project_percentages, user_percentages, project_totals, user_totals =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
@@ -1442,22 +1615,16 @@ def get_manager_overview_report(request, pk):
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), with_holidays=False)
-            total_days = len(filtered_dates_satge1)
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            hours_leave_days = calculate_leave_days(users, start_date, end_date)
             hours_leave_days_percentage = 0
-            if total_hours > 0:
-                hours_leave_days_percentage = hours_leave_days*100 / total_hours
-
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users)
-            total_hours -= hours_pub_holiday
-
-            total_hours -= hours_leave_days
+            if total_hours_wleave > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours_wleave
 
             project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
             total_worked_hours = Decimal(total_worked_hours)
@@ -1502,6 +1669,7 @@ def get_manager_overview_report(request, pk):
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
+#TODO:
 @api_view(['GET'])
 @ensure_csrf_cookie
 @authentication_classes([SessionAuthentication, BasicAuthentication])
@@ -1528,26 +1696,27 @@ def get_manager_missed_report(request, pk):
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
-
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), True)
-            total_days = len(filtered_dates_satge1)
+            
 
             user_report = []
 
             for user in users:
+                # getting the total number of daily hours for selected users
+                daily_hours = Decimal(user.daily_hours)
+                # getting the number of working saturdays since the number of daily hours in sat is 3 always
+                working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), user=user)
+                # getting the hours for all needed elements
+                total_hours, total_hours_wleave, hours_leave_days, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours, working_saturdays, user=user)
+
                 # Calculate total expected hours
-                total_expected_hours = Decimal(user.daily_hours) * total_days
+                total_expected_hours = total_hours
+                # with the leave hours
+                total_actual_hours = total_hours_wleave
 
                 # Calculate total worked hours
                 activity_logs = get_activity_logs(user.id, "all", start_date, end_date)
                 total_worked_hours = sum(Decimal(log.hours_worked) for log in activity_logs)
-                hours_leave_days = calculate_leave_days_user(user, start_date, end_date)
 
-                # with the leave hours
-                total_actual_hours = total_expected_hours
-                
-                total_expected_hours-=hours_leave_days
                 # Calculate missed hours
                 missed_hours = total_expected_hours - total_worked_hours
 
@@ -1599,12 +1768,13 @@ def get_manager_pro_act_report(request, pk):
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
+
 
             project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -1642,20 +1812,24 @@ def get_manager_pro_user_report(request, pk):
         if month and year and manager_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
             dir = Role.objects.get(name="Director")
+            adm = Role.objects.get(name="Admin")
+            manager = CustomUser.objects.get(id=manager_id)
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(role=adm.id),
+                ~Q(is_superuser=True),
+                location=manager.location.id,
+                department=manager.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
 
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
             project_users, project_percentages, user_percentages, project_totals, user_totals =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
@@ -1710,7 +1884,8 @@ def get_admin_activity_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
 
             if user_id != "all":
@@ -1746,7 +1921,8 @@ def get_admin_project_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
@@ -1781,7 +1957,8 @@ def get_admin_leave_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
@@ -1816,29 +1993,24 @@ def get_admin_overview_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
                 users = users.filter(department=int(department_id))
-            
-            total_hours:int = 0
 
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime(), False)
-            total_days = len(filtered_dates_satge1)
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            hours_leave_days = calculate_leave_days(users, start_date, end_date)
             hours_leave_days_percentage = 0
-            if total_hours > 0:
-                hours_leave_days_percentage = hours_leave_days*100 / total_hours
-
-            hours_pub_holiday:int = calculate_public_holidays(start_date, end_date, users)
-            total_hours -= hours_pub_holiday
-
-            total_hours -= hours_leave_days
+            if total_hours_wleave > 0:
+                hours_leave_days_percentage = hours_leave_days*100 / total_hours_wleave
 
             project_data, total_worked_hours = prepare_report_expected_projects_workes(users, project_id, total_hours, start_date, end_date)
             total_worked_hours = Decimal(total_worked_hours)
@@ -1883,6 +2055,7 @@ def get_admin_overview_report(request, pk):
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
+#TODO:
 @api_view(['GET'])
 @ensure_csrf_cookie
 @authentication_classes([SessionAuthentication, BasicAuthentication])
@@ -1900,32 +2073,32 @@ def get_admin_missed_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
                 users = users.filter(department=int(department_id))
 
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-
             user_report = []
-
             for user in users:
+                # getting the total number of daily hours for selected users
+                daily_hours = Decimal(user.daily_hours)
+                # getting the number of working saturdays since the number of daily hours in sat is 3 always
+                working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), user=user)
+                # getting the hours for all needed elements
+                total_hours, total_hours_wleave, hours_leave_days, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours, working_saturdays, user=user)
+
                 # Calculate total expected hours
-                total_expected_hours = Decimal(user.daily_hours) * total_days
+                total_expected_hours = total_hours
+                # with the leave hours
+                total_actual_hours = total_hours_wleave
 
                 # Calculate total worked hours
                 activity_logs = get_activity_logs(user.id, "all", start_date, end_date)
                 total_worked_hours = sum(Decimal(log.hours_worked) for log in activity_logs)
-                hours_leave_days = calculate_leave_days_user(user, start_date, end_date)
 
-                # with the leave hours
-                total_actual_hours = total_expected_hours
-                
-                total_expected_hours-=hours_leave_days
                 # Calculate missed hours
                 missed_hours = total_expected_hours - total_worked_hours
 
@@ -1968,20 +2141,20 @@ def get_admin_pro_act_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
             if department_id != "all":
                 users = users.filter(department=int(department_id))
 
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
             project_activities, project_percentages, activity_percentages, project_totals, activity_totals =\
                   prepare_report_pro_act_percentages(users, total_hours, start_date, end_date)
@@ -2050,7 +2223,8 @@ def get_admin_pro_user_report(request, pk):
             dir = Role.objects.get(name="Director")
             users = CustomUser.objects.filter(
                 ~Q(role=dir.id),
-                ~Q(is_superuser=True)
+                ~Q(is_superuser=True),
+                location=request.user.location.id
             )
 
             if user_id != "all":
@@ -2058,17 +2232,15 @@ def get_admin_pro_user_report(request, pk):
             if department_id != "all":
                 users = users.filter(department=int(department_id))
 
-            total_hours:int = 0
-
-            filtered_dates_satge1 = get_filtered_dates(start_date.ctime(), end_date.ctime())
-            total_days = len(filtered_dates_satge1)
-
+            # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
-            total_hours = daily_hours_total * total_days
+            # getting the number of working saturdays since the number of daily hours in sat is 3 always
+            working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
+            # getting the hours for all needed elements
+            total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
             project_users, project_percentages, user_percentages, project_totals, user_totals =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
-
 
             filtered_data = {"report": []}
 

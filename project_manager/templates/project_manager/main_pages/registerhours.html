@@ -1,51 +1,57 @@
 {% extends 'base.html' %} {% block content %} {% load static %}
 
+<style>
+  #projectName,
+  #activityName {
+    width: 100%;
+    border: 5px inset;
+  }
+</style>
+
 <div class="container mt-5">
   <h1 class="text-center mb-3">{{ date }}</h1>
   <br />
   {% if not is_holiday %} {% if can_edit %}
   <div class="row">
     <!-- Add Activity Section -->
-    <div class="col-md-6 offset-md-3">
+    <div class="col-md-6">
       <div class="mb-3">
         <h2 class="text-left">Add Activity</h2>
-        <div class="row">
-          <div class="col-md-10">
 
-              <label for="projectName" class="form-label">Project</label>
-              <br />
-              <select
-                class="form-select"
-                id="projectName"
-                name="projectName"
-                required
-              >
-                {% for project in projects %}
-                <option value="{{ project.project_name }}">
-                  {{ project.project_name }}
-                </option>
-                {% endfor %}
-              </select>
+        <div class="mb-3">
+          <label for="projectName" class="form-label">Project</label>
+          <br />
+          <select
+            class="form-select"
+            id="projectName"
+            name="projectName"
+            required
+          >
+            {% for project in projects %}
+            <option value="{{ project.project_name }}">
+              {{ project.project_name }}
+            </option>
+            {% endfor %}
+          </select>
 
-              <br />
-              <label for="activityName" class="form-label">Activity Type</label>
-              <br />
-              <select
-                class="form-select"
-                id="activityName"
-                name="activityName"
-                required
-              >
-                {% for activity in activities %}
-                <option value="{{ activity.activity_name }}">
-                  {{ activity.activity_name }}
-                </option>
-                {% endfor %}
-              </select>
-
+          <br />
+          <div class="mb-3">
+            <label for="activityName" class="form-label">Activity Type</label>
+            <br />
+            <select
+              class="form-select"
+              id="activityName"
+              name="activityName"
+              required
+            >
+              {% for activity in activities %}
+              <option value="{{ activity.activity_name }}">
+                {{ activity.activity_name }}
+              </option>
+              {% endfor %}
+            </select>
           </div>
         </div>
-
         <div class="mb-3">
           <label for="details" class="form-label">Details</label>
           <em style="color: orange">optional</em>
@@ -80,7 +86,7 @@
     </div>
   </div>
   {% else %}
-  <h3 class="text-center mb-3 no-edit-warning">Entering data for future dates is not permitted.</h3>
+  <h1 class="text-center mb-3 no-edit-warning">Entering data for future dates is not permitted.</h1>
   {% endif %} {% else %}
   <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
   {% endif %}
@@ -101,7 +107,6 @@
               <th>Date</th>
               <th>Details</th>
               <th>Action</th>
-              <th></th>
             </tr>
           </thead>
           <tbody class="existing-entries">
@@ -113,6 +118,7 @@
               <td>{{entry.hours_worked|floatformat}}h</td>
               <td>{{entry.date|date:"Y-m-d"}}</td>
               <td>{{entry.details}}</td>
+              <td></td>
             </tr>
             {% endfor %}
           </tbody>

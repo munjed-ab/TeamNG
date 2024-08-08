@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from .models import CustomUser, Project, Activity, Role
 from django.contrib import messages
 from django.db.models import F, Sum, Q
-
+from django.contrib.auth import logout
+from .views import check_location
 
 #################################################
 #  __  __                                       #
@@ -30,6 +31,9 @@ def manager_overview(request):
         return redirect("login")
     if not request.user.role.name=="Manager":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     manager = request.user
 
@@ -84,6 +88,9 @@ def report_manager_act(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     
@@ -116,6 +123,9 @@ def report_manager_pro(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
@@ -147,6 +157,9 @@ def report_manager_leave(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
@@ -176,6 +189,9 @@ def report_manager_overview(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
@@ -207,6 +223,9 @@ def report_manager_pro_act(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
@@ -242,6 +261,9 @@ def report_manager_pro_user(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
@@ -277,6 +299,9 @@ def report_manager_missed_hours(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()

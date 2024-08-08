@@ -32,6 +32,13 @@ from io import BytesIO
 #################################################################################
 
 
+def is_saturday(date_str:str):
+    date = datetime.strptime(date_str, r"%Y-%m-%d")
+    if date.isoweekday() == 6:
+        return True
+    return False
+
+
 def get_firstday_current_last_month():
     # Get the first day of the current month
     today = date.today()
@@ -180,6 +187,7 @@ def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True, ex
 
 
 
+
 #########################################################
 #  __  __       _        __      ___                    #
 # |  \/  |     (_)       \ \    / (_)                   #
@@ -188,6 +196,31 @@ def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True, ex
 # | |  | | (_| | | | | |    \  /  | |  __/\ V  V /\__ \ #
 # |_|  |_|\__,_|_|_| |_|     \/   |_|\___| \_/\_/ |___/ #
 #########################################################
+
+
+# def login_view(request):
+#     if request.method == 'POST':
+#         form = AuthenticationForm(request, request.POST)
+#         if form.is_valid():
+#             if hasattr(request, "loc_name"):
+#                 location = request.loc_name
+#                 user = form.get_user()
+#                 if user.location.loc_name == str(location):
+#                     login(request, user)
+#                     if request.user.role.name == "Director":
+#                         return redirect('overview')
+#                     else:
+#                         return redirect('dashboard')
+#                 else:
+#                     messages.error(request,f"Your location is {user.location.loc_name}.activity.teamnigeria.com.ng")
+#             else:
+#                 messages.error(request,f"Sorry, something went wrong.")
+#         else:
+#             messages.error(request,f"Sorry, your credentials are incorrect.")
+#         return redirect("login")
+#     else:
+#         form = AuthenticationForm()
+#     return render(request, 'project_manager/login.html', {'form': form})
 
 
 def login_view(request):
@@ -203,6 +236,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'project_manager/login.html', {'form': form})
 
+
 @login_required
 def logout_view(request):
     if not request.user.is_authenticated:
@@ -210,10 +244,32 @@ def logout_view(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
     
     logout(request)
     return redirect("login")
+
+
+def check_location(request) -> str | None:
+    """
+    Goal: checks if a request from a user does have the same loc_name (prefix url) as the user location.
+    Parameter:
+                 only the request to extract the user info and the loc_name.   
+    Returns:
+                 the name of the loc_name if no errors, else it returns None
+    """
+    if hasattr(request, "loc_name"):
+        if request.user.location.loc_name == str(request.loc_name):
+            location = request.loc_name
+        else:
+            messages.error(request, f"Your Location is: {request.user.location.loc_name}.activity.teamnigeria.com.ng")
+            return None
+    else:
+        messages.error(request, f"Someting went wrong with you location url.")
+        return None
+    return str(location)
+
 
 def dashboard(request):
     if not request.user.is_authenticated:
@@ -221,7 +277,13 @@ def dashboard(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+
+    # location = check_location(request)
+    # if not location:
+    #     logout(request)
+    #     return redirect("login")
     
     projects = Project.objects.all()
 
@@ -236,8 +298,12 @@ def registerhours(request, date_picked):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     q = date_picked
     can_edit = False
     is_holiday = False
@@ -319,8 +385,12 @@ def activity_log(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     today = date.today()
     q = request.GET.get("q",today)
 
@@ -339,8 +409,12 @@ def update_entry(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     user = request.user
     projects = Project.objects.all()
     activities = Activity.objects.all()
@@ -398,11 +472,15 @@ def update_entry(request, pk):
 
             # Check if hours entered are not None (always gonna be :) and Decimal it. else -> return
             if hours is not None:
+                #checking if tthe user is on a working day saterday
+                daily_user_hours = user.daily_hours
+                if is_saturday(date_picked):
+                    daily_user_hours = 3 #thus setting the daily hours to 3
                 hours = Decimal(hours)
                 left_hours_on_date = get_hours_worked_on_date(user, date_picked) - Decimal(old_entry.hours_worked)
-                if hours + left_hours_on_date > user.daily_hours:
+                if hours + left_hours_on_date > daily_user_hours:
                     messages.error(request,f"Canceled. \
-                    You exeeded {user.daily_hours} hours on {date_picked}.")
+                    You exeeded {daily_user_hours} hours on {date_picked}.")
                     return redirect("activitylogs")
             else:
                 messages.error(request,"Canceled. \
@@ -439,7 +517,11 @@ def delete_entry(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     entry = ActivityLogs.objects.get(id = pk)
 
@@ -458,14 +540,20 @@ def addleave(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     manager_role = Role.objects.get(name="Manager")
     admin_role = Role.objects.get(name="Admin")
 
     admins = CustomUser.objects.filter(
-        Q(role = admin_role.id),
-        Q(is_superuser=False)
+        role = admin_role.id,
+        location = request.user.location,
+        department = request.user.department,
+        is_superuser=False
     )
 
     managers = CustomUser.objects.filter(
@@ -474,6 +562,9 @@ def addleave(request):
         department = request.user.department,
         is_superuser=False
     )
+    if not managers:
+        managers = admins[:]
+
     if request.method == "POST":
         start_date = request.POST.get("startDate")
         end_date = request.POST.get("endDate")
@@ -562,7 +653,11 @@ def notifications(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = request.user
 
@@ -640,7 +735,11 @@ def leave_log(request):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     leave_logs = Leave.objects.filter(
         from_user = request.user.id
@@ -684,8 +783,12 @@ def update_leave(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     leave = Leave.objects.get(id=pk)
 
     admin_role = Role.objects.get(name="Admin")
@@ -693,6 +796,8 @@ def update_leave(request, pk):
 
     admins = CustomUser.objects.filter(
         role=admin_role.id,
+        department=request.user.department,
+        location=request.user.location,
         is_superuser=False
     )
 
@@ -702,6 +807,8 @@ def update_leave(request, pk):
         location=request.user.location,
         is_superuser=False
     )
+    if not managers:
+        managers = admins[:]
 
     if request.method == "POST":
         if leave.is_approved or leave.is_rejected:
@@ -762,7 +869,12 @@ def delete_leave(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+    
     leave  = Leave.objects.get(id = pk)
 
     if request.method == "POST":
@@ -795,14 +907,28 @@ def profile(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+    
     user  = CustomUser.objects.get(id = pk)
     
     return render(request, "project_manager/profile/profile.html", {"user":user})
 
+
 @login_required(login_url="login")
 @transaction.atomic
 def upload_profile_image(request):
+    if request.user.disabled:
+        messages.error(request,f"Sorry. \
+        You are disabled.")
+        logout(request)
+        return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     if request.method == 'POST':
         try:
             # Check if a profile already exists for the user
@@ -890,7 +1016,11 @@ def report_user_activity(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
@@ -907,8 +1037,12 @@ def report_user_project(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
 
@@ -925,8 +1059,12 @@ def report_user_leave(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     user = CustomUser.objects.get(id=pk)
 
     context = {
@@ -941,8 +1079,12 @@ def report_user_expectedhours(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     user = CustomUser.objects.get(id=pk)
     projects = Project.objects.all()
 
@@ -958,7 +1100,11 @@ def report_user_pro_act(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     user = CustomUser.objects.get(id=pk)
     projects_count = Project.objects.count()
@@ -978,7 +1124,11 @@ def report_user_pro_user(request, pk):
     elif request.user.disabled:
         messages.error(request,f"Sorry. \
         You are disabled.")
+        logout(request)
         return redirect("login")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     user = CustomUser.objects.get(id=pk)
     projects_count = Project.objects.count()

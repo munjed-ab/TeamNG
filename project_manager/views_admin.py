@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from .models import CustomUser, Project, Activity, Holiday, Department, Location, Role
 from datetime import *
 from django.db.models import F, Sum, Q
@@ -9,6 +10,7 @@ from .forms import CustomUserForm, CustomUserUpdateForm, ProjectForm, ActivityFo
 from django.core.exceptions import ValidationError
 from .tasks import send_signup_email
 from .api.views import getUserSupervisor
+from .views import check_location
 
 #########################################################################
 #              _           _          _____            _             _  #
@@ -30,8 +32,15 @@ def users(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
+    dir = Role.objects.get(name="Director")
+
     users = CustomUser.objects.filter(
+        ~Q(role=dir.id),
+        location=request.user.location.id,
         is_superuser = False,
     ).order_by("username")
 
@@ -41,6 +50,7 @@ def users(request):
         _user["ID"] = str(user.id)
         _user["profile"] = str(user.profile.profile_img.url)
         _user["username"] = str(user.username)
+        _user["location"] = str(user.location.loc_name)
         _user["first_name"] = str(user.first_name)
         _user["last_name"] = str(user.last_name)
         _user["email"] = str(user.email)
@@ -64,6 +74,9 @@ def create_new_user(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     form = CustomUserForm()
     if request.method == 'POST':
@@ -102,11 +115,18 @@ def edit_user(request, pk):
     if not request.user.role.name=="Admin":
         redirect("dashboard")
 
+    # location = check_location(request)
+    # if not location:
+    #     logout(request)
+    #     return redirect("login")
     user = CustomUser.objects.get(
         id=int(pk)
     )
-    form = CustomUserUpdateForm(instance=user)
+    # if user.location.loc_name != location:
+    #     messages.error(request, f"Access Denied, {user.username.capitalize()} is out of your location")
+    #     return redirect("users")
 
+    form = CustomUserUpdateForm(instance=user)
     if request.method == 'POST':
         form = CustomUserUpdateForm(request.POST, instance=user)
         if form.is_valid():
@@ -150,6 +170,9 @@ def projects(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     projects = Project.objects.all()
 
@@ -169,6 +192,9 @@ def create_project(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     form = ProjectForm()
     if request.method == "POST":
@@ -196,7 +222,10 @@ def edit_project(request, pk):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
-
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+    
     project = Project.objects.get(id=pk)
     if request.method == "POST":
         name = request.POST["project_name"]
@@ -221,6 +250,9 @@ def activities(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     activities = Activity.objects.all()
     context = {
@@ -239,6 +271,9 @@ def create_activity(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     form = ActivityForm()
     if request.method == "POST":
@@ -266,6 +301,9 @@ def edit_activity(request, pk):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     activity = Activity.objects.get(id=pk)
     if request.method == "POST":
@@ -291,6 +329,9 @@ def departments(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     departments = Department.objects.all()
     context = {
@@ -309,6 +350,9 @@ def create_dept(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     form = DepartmentForm()
     if request.method == "POST":
@@ -336,6 +380,9 @@ def edit_dept(request, pk):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     dept = Department.objects.get(id=pk)
     if request.method == "POST":
@@ -361,6 +408,8 @@ def locations(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    if not request.user.is_superuser:
+        redirect("dashboard")
     
     locations = Location.objects.all()
     context = {
@@ -378,6 +427,8 @@ def create_loc(request):
         You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
+        redirect("dashboard")
+    if not request.user.is_superuser:
         redirect("dashboard")
 
     form = LocationForm()
@@ -406,6 +457,8 @@ def edit_loc(request, pk):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    if not request.user.is_superuser:
+        redirect("dashboard")
 
     loc = Location.objects.get(id=pk)
     if request.method == "POST":
@@ -431,7 +484,10 @@ def holidays(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     holidays = Holiday.objects.all()
     context = {
         "holidays":holidays
@@ -449,6 +505,9 @@ def create_holiday(request):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     form = HolidayForm()
     if request.method == "POST":
@@ -482,6 +541,9 @@ def edit_holiday(request, pk):
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     holiday = Holiday.objects.get(id=pk)
     if request.method == "POST":
@@ -527,11 +589,15 @@ def overview(request):
         return redirect("login")
     if not (request.user.ov or request.user.role.name == "Admin" or request.user.role.name == "Director"):
         redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
 
     departments = Department.objects.all()
@@ -569,13 +635,17 @@ def report_admin_act(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
 
     user = CustomUser.objects.get(id=pk)
 
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -599,12 +669,16 @@ def report_admin_pro(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -629,12 +703,16 @@ def report_admin_leave(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
-    
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
+
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -659,12 +737,16 @@ def report_admin_overview(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -690,12 +772,16 @@ def report_admin_pro_act(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects_count = Project.objects.all().count()
@@ -722,6 +808,9 @@ def report_holiday(request):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     return render(request, "project_manager/reports/admins/report_admin_holidays.html", context={})
     
@@ -737,12 +826,16 @@ def report_admin_missed_hours(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects = Project.objects.all()
@@ -767,12 +860,16 @@ def report_admin_pro_user(request, pk):
         messages.error(request,
         "Access Denied.")
         return redirect("dashboard")
+    # if not check_location(request):
+    #     logout(request)
+    #     return redirect("login")
     
     user = CustomUser.objects.get(id=pk)
     dir = Role.objects.get(name="Director")
     users = CustomUser.objects.filter(
         ~Q(role=dir.id),
-        ~Q(is_superuser=True)
+        ~Q(is_superuser=True),
+        location=request.user.location.id
     ).order_by("username")
     departments = Department.objects.all()
     projects_count = Project.objects.all().count()
