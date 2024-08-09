@@ -32,6 +32,15 @@ from io import BytesIO
 #################################################################################
 
 
+def leave_overlap(user, start_date, end_date):
+    leave_requests = Leave.objects.filter(
+        from_user=user.id,
+        start_date__lte=end_date,
+        end_date__gte=start_date
+    )
+    return any(leave_requests)
+
+
 def is_saturday(date_str:str):
     date = datetime.strptime(date_str, r"%Y-%m-%d")
     if date.isoweekday() == 6:
@@ -590,7 +599,10 @@ def addleave(request):
                 #     messages.error(request,
                 #     "Canceled. You already requested in these dates.")
                 #     return redirect('addleave')
-
+                if leave_overlap(request.user, start_date, end_date):
+                    messages.error(request,
+                    "Canceled. You already have a leave on these days.")
+                    return redirect('addleave')
             else:
                 messages.error(request,
                 "Something went wrong!")
