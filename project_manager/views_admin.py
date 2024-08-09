@@ -12,6 +12,16 @@ from .tasks import send_signup_email
 from .api.views import getUserSupervisor
 from .views import check_location
 
+
+
+def holiday_overlap(date):
+    holiday_date = datetime.strptime(date, f"%Y-%m-%d")
+    holidays = Holiday.objects.filter(
+        holiday_date=holiday_date
+    )
+    return any(holidays)
+
+
 #########################################################################
 #              _           _          _____            _             _  #
 #     /\      | |         (_)        / ____|          | |           | | #
@@ -515,6 +525,10 @@ def create_holiday(request):
         if form.is_valid():
             try:
                 date = request.POST["holiday_date"]
+                if holiday_overlap(date):
+                    messages.error(request,
+                    "Canceled. You already have a holiday on this date.")
+                    return redirect('holidays')
                 form.holiday_date = date
                 form.clean_name()
                 form.save()
@@ -549,6 +563,10 @@ def edit_holiday(request, pk):
     if request.method == "POST":
         name = request.POST["holiday_name"]
         date = request.POST["holiday_date"]
+        if holiday_overlap(date):
+            messages.error(request,
+            "Canceled. You already have a holiday on this date.")
+            return redirect('holidays')
         if str(name).isdigit():
             messages.error(request, "Holiday name must not be numerical.")
             return redirect("holidays")
@@ -562,6 +580,7 @@ def edit_holiday(request, pk):
         "holiday":holiday
     }
     return render(request, "project_manager/admin_control/holidays/edit_holiday.html", context)
+
 
 
 
