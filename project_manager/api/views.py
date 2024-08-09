@@ -1809,17 +1809,18 @@ def get_manager_pro_user_report(request, pk):
         year = request.GET.get("year")
         user_id = request.GET.get("user")
         manager_id = int(pk)
+        logger.debug(f'Manager PRoject/User Report for manager :{manager_id}')
         if month and year and manager_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
-            dir = Role.objects.get(name="Director")
+            director = Role.objects.get(name="Director")
             adm = Role.objects.get(name="Admin")
             manager = CustomUser.objects.get(id=manager_id)
             users = CustomUser.objects.filter(
-                ~Q(role=dir.id),
+                ~Q(role=director.id),
                 ~Q(role=adm.id),
                 ~Q(is_superuser=True),
                 location=manager.location.id,
-                department=manager.location.id
+                department=manager.department.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
@@ -1830,7 +1831,6 @@ def get_manager_pro_user_report(request, pk):
             working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
             # getting the hours for all needed elements
             total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
-
             project_users, project_percentages, user_percentages, project_totals, user_totals =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
 
