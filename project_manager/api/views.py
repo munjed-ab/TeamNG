@@ -1809,7 +1809,6 @@ def get_manager_pro_user_report(request, pk):
         year = request.GET.get("year")
         user_id = request.GET.get("user")
         manager_id = int(pk)
-        logger.debug(f'Manager PRoject/User Report for manager :{manager_id}')
         if month and year and manager_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
             director = Role.objects.get(name="Director")
