@@ -132,16 +132,7 @@
       maxDate: "today", // Disable selecting future dates
       disable: [
         function (date) {
-          // Disable Sundays (0 is Sunday, 1 is Monday, ..., 6 is Saturday)
-          if (date.getDay() === 0) return true;
 
-          // Disable the second and fourth Saturdays
-          if (date.getDay() === 6) {
-            var weekOfMonth = Math.floor((date.getDate() - 1) / 7) + 1;
-            if (weekOfMonth === 2 || weekOfMonth === 4) {
-              return true;
-            }
-          }
           var today = new Date();
 
           // Disable dates from the future months

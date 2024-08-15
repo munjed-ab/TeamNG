@@ -4,17 +4,18 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
-from datetime import date, timedelta, datetime
+from datetime import date, timedelta
 from project_manager.models import ActivityLogs, Holiday, Leave, Project, Activity, CustomUser
 from project_manager.models import Role
 from django.db import transaction
 from django.contrib import messages
 import calendar
+from calendar import monthcalendar, SATURDAY
 import pandas as pd
 import json
 from decimal import Decimal
 from django.views.decorators.http import require_POST
-from project_manager.views import get_filtered_dates, check_location, is_saturday, get_hours_worked_on_date
+from project_manager.views import get_filtered_dates, is_saturday, get_hours_worked_on_date, check_is_sun_sat
 from collections import defaultdict
 
 
@@ -40,13 +41,16 @@ def get_working_saturdays(start_date:str, end_date:str, users: list[CustomUser] 
 
     # get all saterdays
     saturdays = [date for date in date_range if date.dayofweek == 5]
-    banned_saterdays = [
-        saturday
-        for saturday in saturdays
-        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
-    ]
-
-    filtered_dates = [date for date in saturdays if date not in banned_saterdays]
+    banned_saturdays = []
+    for sat in saturdays:
+        month_cal = monthcalendar(sat.year, sat.month)
+        month_saturdays = [week[SATURDAY] for week in month_cal if week[SATURDAY] != 0]
+        if len(month_saturdays) > 1:
+            second_saturday = month_saturdays[1]
+            last_saturday = month_saturdays[-1]
+            banned_saturdays.extend([pd.Timestamp(sat.year, sat.month, second_saturday),
+                                     pd.Timestamp(sat.year, sat.month, last_saturday)])
+    filtered_dates = [date for date in saturdays if date not in banned_saturdays]
 
     holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
     # exclude public holidays
@@ -83,12 +87,17 @@ def get_working_saturdays_in_leave(start_date:str, end_date:str):
 
     # get all saterdays
     saturdays = [date for date in date_range if date.dayofweek == 5]
-    banned_saterdays = [
-        saturday
-        for saturday in saturdays
-        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
-    ]
-    filtered_dates = [date for date in saturdays if date not in banned_saterdays]
+    banned_saturdays = []
+    for sat in saturdays:
+        month_cal = monthcalendar(sat.year, sat.month)
+        month_saturdays = [week[SATURDAY] for week in month_cal if week[SATURDAY] != 0]
+        if len(month_saturdays) > 1:
+            second_saturday = month_saturdays[1]
+            last_saturday = month_saturdays[-1]
+            banned_saturdays.extend([pd.Timestamp(sat.year, sat.month, second_saturday),
+                                     pd.Timestamp(sat.year, sat.month, last_saturday)])
+
+    filtered_dates = [date for date in saturdays if date not in banned_saturdays]
 
     holiday_dates = [pd.Timestamp(holiday.holiday_date.ctime()) for holiday in public_holidays]
     # exclude public holidays
@@ -132,14 +141,22 @@ def get_start_end_date(month: str, year: str):
     end_date = date.today()
     if month == "all":
         start_date = date(int(year), 1, 1)
-        end_date = date(int(year), 12, 31)
-    else:
-        start_date = date(int(year), int(month), 1)
-        if month == "12":
-            last_month_day = date(int(year) + 1, 1, 1) - start_date
+        if date.today().year == int(year):
+            end_date = date.today()
         else:
-            last_month_day = date(int(year), int(month) + 1, 1) - start_date
-        end_date = date(int(year), int(month), last_month_day.days)
+            end_date = date(int(year), 12, 31)
+    else:
+        # if the current month we take it from the first day of the month to the current day
+        if date.today().month == int(month):
+            start_date = date(int(year), int(month), 1)
+            end_date = date.today()
+        else:
+            start_date = date(int(year), int(month), 1)
+            if month == "12":
+                last_month_day = date(int(year) + 1, 1, 1) - start_date
+            else:
+                last_month_day = date(int(year), int(month) + 1, 1) - start_date
+            end_date = date(int(year), int(month), last_month_day.days)
     return start_date, end_date
 
 
@@ -177,13 +194,22 @@ def calculate_public_holidays(order_start: date, order_end: date, users: list[Cu
     """
     pub_holidays = Holiday.objects.filter(
         holiday_date__range=[order_start, order_end]
-    ).count()
+    )
     if user and not users:
         daily_hours_total = Decimal(user.daily_hours)
     else:
         daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
+    
+    count_holidays = 0
+    count_working_saturdays_holidays = 0
+    for ho in pub_holidays:
+        if not check_is_sun_sat(ho.holiday_date):
+            if is_saturday(ho.holiday_date.strftime(r"%Y-%m-%d")):
+                count_working_saturdays_holidays+=1
+            else:
+                count_holidays+=1
+    hours_pub_holiday = (count_working_saturdays_holidays*HOURS_ON_SAT) + (count_holidays*daily_hours_total)
 
-    hours_pub_holiday = pub_holidays * daily_hours_total
     return hours_pub_holiday
 
 
@@ -310,21 +336,21 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
         
         project_data[project_name]['total'] += activity_log.hours_worked
         project_data[project_name]['activity_logs'].append({
-            'date': activity_log.date.strftime('%Y-%m-%d'),
+            'date': activity_log.date.strftime(r'%d-%b-%Y'),
             'hours_worked': activity_log.hours_worked,
             'details': activity_log.details,
             'activity': activity_type_name,
-            'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
             'user': fullname
         })
         
         activity_type_data[activity_type_name]['total'] += activity_log.hours_worked
         activity_type_data[activity_type_name]['activity_logs'].append({
-            'date': activity_log.date.strftime('%Y-%m-%d'),
+            'date': activity_log.date.strftime(r'%d-%b-%Y'),
             'hours_worked': activity_log.hours_worked,
             'details': activity_log.details,
             'project': project_name,
-            'time_added': activity_log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
             'user': fullname
         })
         total_worked_hours += activity_log.hours_worked
@@ -483,12 +509,13 @@ def prepare_report_activity_logs(users, project_id, start_date, end_date):
     for log in activity_logs:
         project_name = log.project.project_name
         logs["activity_logs"].append({
-            'time_added': log.updated.strftime('%Y-%m-%d [%H:%M:%S]'),
+            'time_added': log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
             'username': log.user.first_name.capitalize() + " " + log.user.last_name.capitalize(),
             'project': project_name,
             'activity': log.activity.activity_name,
             'department': log.user.department.dept_name,
-            'date': log.date.strftime('%Y-%m-%d'),
+            'location':str(log.user.location.loc_name).upper(),
+            'date': log.date.strftime(r'%d-%b-%Y'),
             "hours_worked": Decimal(log.hours_worked),
             "details": log.details,
         })
@@ -537,7 +564,7 @@ def prepare_report_projects(users: list[CustomUser], project_id: int, start_date
         loc = log["user__location__loc_name"]
         projects[project_name]["project"] = project_name
         projects[project_name]["department"] = dept
-        projects[project_name]["location"] = loc
+        projects[project_name]["location"] = str(loc).upper()
         projects[project_name]["worked_hours"] += log["total_hours_worked"]
 
     logs["projects"] = list(projects.values())
@@ -583,8 +610,10 @@ def prepare_report_leaves(users, start_date, end_date):
         leaves.append({
             "from": log.from_user.first_name.capitalize() + " " + log.from_user.last_name.capitalize() if log.from_user else "__",
             "to": log.to_user.first_name.capitalize() + " " + log.to_user.last_name.capitalize() if log.to_user else "__",
-            "start_date": log.start_date.strftime(r"%Y-%m-%d"),
-            "end_date": log.end_date.strftime(r"%Y-%m-%d"),
+            "department": str(log.from_user.department.dept_name).capitalize(),
+            "location": str(log.from_user.location.loc_name).upper(),
+            "start_date": log.start_date.strftime(r"%d-%b-%Y"),
+            "end_date": log.end_date.strftime(r"%d-%b-%Y"),
             "total_leave_days":log.total_leave_days,
             "actual_leave_days":len(filtered_dates),
             "weekends_count": weekends_count,
@@ -798,9 +827,9 @@ def calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, w
          - hours_leave_days
          - hours_pub_holiday
     """
-    # getting the list of filtered days without weekly holidays
-    total_days_list = get_filtered_dates(start_date, end_date, with_holidays=False)
-
+    # getting the list of filtered days without weekly holidays and public holidays
+    total_days_list = get_filtered_dates(start_date, end_date)
+    
     # getting the number of hours and days of leaves for all users
     if user and not users:
         hours_leave_days, leave_days = calculate_leave_days_user(user, start_date, end_date, with_days=True)
@@ -829,9 +858,6 @@ def calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, w
         hours_pub_holiday = calculate_public_holidays(start_date, end_date, users=users)
 
     # subtracting public holiday hours from both total hours and total hours with leave
-    total_hours -= hours_pub_holiday
-    total_hours_wleave -= hours_pub_holiday
-
     return total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday
 
 
@@ -1074,7 +1100,6 @@ def overview_data(request):
             working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
             # getting the hours for all needed elements
             total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
-
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - Decimal(total_worked_hours)
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours , Decimal(total_worked_hours), missed_hours, hours_leave_days, hours_pub_holiday)
@@ -1164,8 +1189,12 @@ def overview_user_data(request, pk):
             # getting the number of working saturdays since the number of daily hours in sat is 3 always
             working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
             # getting the hours for all needed elements
+            print("working_saturdays: ", working_saturdays)
             total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
-
+            print("total hours: ", total_hours)
+            print("total hours with leave: ", total_hours_wleave)
+            print("public holiday: ", hours_pub_holiday)
+            print("public hours: ", hours_pub_holiday)
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
@@ -1222,8 +1251,8 @@ def get_user_activity_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1251,8 +1280,8 @@ def get_user_project_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1321,7 +1350,7 @@ def get_user_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1351,8 +1380,8 @@ def get_user_overview_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1399,8 +1428,8 @@ def get_user_pro_act_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1447,8 +1476,8 @@ def get_user_pro_user_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1498,8 +1527,8 @@ def get_manager_activity_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1540,8 +1569,8 @@ def get_manager_project_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1634,7 +1663,7 @@ def get_manager_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1664,8 +1693,8 @@ def get_manager_overview_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1724,6 +1753,8 @@ def get_manager_missed_report(request, pk):
                     user_report.append({
                         "name": user.first_name.capitalize() + " " + user.last_name.capitalize(),
                         "role": user.role.name,
+                        "department":str(user.department.dept_name).capitalize(),
+                        "location":str(user.location.loc_name).upper(),
                         "expected_hours": total_actual_hours,
                         "worked_hours":total_worked_hours,
                         "leave_hours":hours_leave_days,
@@ -1794,8 +1825,8 @@ def get_manager_pro_act_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1811,18 +1842,19 @@ def get_manager_pro_user_report(request, pk):
         manager_id = int(pk)
         if month and year and manager_id and user_id:
             start_date, end_date = get_start_end_date(month, year)
-            director = Role.objects.get(name="Director")
+            dir = Role.objects.get(name="Director")
             adm = Role.objects.get(name="Admin")
             manager = CustomUser.objects.get(id=manager_id)
             users = CustomUser.objects.filter(
-                ~Q(role=director.id),
+                ~Q(role=dir.id),
                 ~Q(role=adm.id),
                 ~Q(is_superuser=True),
                 location=manager.location.id,
-                department=manager.department.id
+                department=manager.location.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
+
 
             # getting the total number of daily hours for selected users
             daily_hours_total = sum([Decimal(user.daily_hours) for user in users])
@@ -1830,8 +1862,10 @@ def get_manager_pro_user_report(request, pk):
             working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
             # getting the hours for all needed elements
             total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
+
             project_users, project_percentages, user_percentages, project_totals, user_totals =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
+
 
             filtered_data = {"report": []}
 
@@ -1848,8 +1882,8 @@ def get_manager_pro_user_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1897,8 +1931,8 @@ def get_admin_activity_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -1934,8 +1968,8 @@ def get_admin_project_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -2019,7 +2053,7 @@ def get_admin_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%Y/%m/%d"), "end":end_date.strftime(r"%Y/%m/%d")},
+                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -2049,8 +2083,8 @@ def get_admin_overview_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
         return JsonResponse({"error": "Invalid request"}, status=405)
 
 
@@ -2105,7 +2139,8 @@ def get_admin_missed_report(request, pk):
                     user_report.append({
                         "name": user.first_name.capitalize() + " " + user.last_name.capitalize(),
                         "role": user.role.name,
-                        "department": user.department.dept_name,
+                        "department": str(user.department.dept_name).capitalize(),
+                        "location":str(user.location.loc_name).upper(),
                         "expected_hours": total_actual_hours,
                         "worked_hours":total_worked_hours,
                         "leave_hours":hours_leave_days,
@@ -2173,9 +2208,9 @@ def get_admin_pro_act_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
-        return JsonResponse({"error": "Invalid request"}, status=405)
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
+        return JsonResponse({"error": f"Invalid request {e}"}, status=405)
 
 
 @api_view(['GET'])
@@ -2196,14 +2231,14 @@ def get_holiday_report(request):
             filtered_data = {"report": []}
             for holiday in _holidays:
                 holiday_name = holiday.holiday_name
-                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%Y-%m-%d")})
+                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%d-%b-%Y")})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
-        return JsonResponse({"error": "Invalid request"}, status=405)
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
+        return JsonResponse({"error": f"Invalid request {e}"}, status=405)
 
 
 @api_view(['GET'])
@@ -2256,7 +2291,7 @@ def get_admin_pro_user_report(request, pk):
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
-    except:
-        messages.error(request, "Something went wrong :(")
-        return JsonResponse({"error": "Invalid request"}, status=405)
+    except Exception as e:
+        messages.error(request, f"Something went wrong: {e}")
+        return JsonResponse({"error": f"Invalid request {e}"}, status=405)
 

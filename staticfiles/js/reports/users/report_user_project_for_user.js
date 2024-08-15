@@ -186,7 +186,7 @@ $(document).ready(function () {
         month = "_";
       }
 
-      XLSX.writeFile(wb, `project_for_user_report_in_${year}_${month}.xlsb`);
+      XLSX.writeFile(wb, `project_for_user_report_in_${year}_${month}.xlsx`);
     });
   $("#tableModal .btn-close").click(function () {
     $("#tableModal").modal("hide");

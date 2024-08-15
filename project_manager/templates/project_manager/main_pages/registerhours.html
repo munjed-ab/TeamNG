@@ -13,10 +13,11 @@
   <br />
   {% if not is_holiday %} {% if can_edit %}
   <div class="row">
-    <!-- Add Activity Section -->
-    <div class="col-md-6">
+    <div class="col-lg-5 col-xl-5 col-md-12 col-sm-12 col-xs-12">
+      <!-- Add Activity Section -->
+
       <div class="mb-3">
-        <h2 class="text-left">Add Activity</h2>
+        <h2 class="text-center">Add Activity</h2>
 
         <div class="mb-3">
           <label for="projectName" class="form-label">Project</label>
@@ -27,6 +28,7 @@
             name="projectName"
             required
           >
+            <option disabled selected value>-- select an option --</option>
             {% for project in projects %}
             <option value="{{ project.project_name }}">
               {{ project.project_name }}
@@ -44,6 +46,7 @@
               name="activityName"
               required
             >
+              <option disabled selected value>-- select an option --</option>
               {% for activity in activities %}
               <option value="{{ activity.activity_name }}">
                 {{ activity.activity_name }}
@@ -84,18 +87,20 @@
         </div>
       </div>
     </div>
-  </div>
-  {% else %}
-  <h1 class="text-center mb-3 no-edit-warning">Entering data for future dates is not permitted.</h1>
-  {% endif %} {% else %}
-  <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
-  {% endif %}
-  <div class="row mt-5">
-    <!-- Activity Logs Section -->
-    <div class="col-md-10 offset-md-1">
+    {% else %}
+    <h1 class="text-center mb-3 no-edit-warning">
+      Entering data for future dates is not permitted.
+    </h1>
+    {% endif %} {% else %}
+    <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
+    {% endif %}
+    <div class="col-lg-7 col-xl-7 col-md-12 col-sm-12 col-xs-12">
+      <!-- Activity Logs Section -->
+
       <!-- Adjusted column width -->
       <div class="table-responsive">
         <h2 class="float-left mb-3">Activity Logs</h2>
+        <br />
         <h2 id="total-hours" class="float-right">{{ total|floatformat }}h</h2>
         <table class="table table-striped custom-table">
           <!-- Added custom class -->
@@ -116,7 +121,7 @@
               <td>{{entry.project}}</td>
               <td>{{entry.activity}}</td>
               <td>{{entry.hours_worked|floatformat}}h</td>
-              <td>{{entry.date|date:"Y-m-d"}}</td>
+              <td>{{entry.date|date:"d-M-Y"}}</td>
               <td>{{entry.details}}</td>
               <td></td>
             </tr>

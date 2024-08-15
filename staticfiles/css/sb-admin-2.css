@@ -628,11 +628,52 @@ pre code {
   }
 }
 
+@media (min-width: 1300px) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl {
+    max-width: 1240px !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl {
+    max-width: 1440px !important;
+  }
+}
+
+@media (min-width: 1700px) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl {
+    max-width: 1640px !important;
+  }
+}
+
+@media (min-width: 2000px) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl {
+    max-width: 1940px !important;
+  }
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
   margin-right: -0.75rem;
   margin-left: -0.75rem;
+  justify-content: center;
 }
 
 .no-gutters {
@@ -1593,7 +1634,7 @@ pre code {
 }
 
 #TableToExport {
-  font-size: x-small;
+  font-size: smaller;
   font-family: sans-serif;
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
@@ -1601,7 +1642,7 @@ pre code {
 }
 
 #TableInModal {
-  font-size: x-small;
+  font-size: smaller;
   font-family: sans-serif;
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;

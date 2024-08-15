@@ -4,13 +4,14 @@ flatpickr("#startDate", {
   onClose: function (selectedDates, dateStr, instance) {
     const endDatePicker = document.getElementById("endDate")._flatpickr;
     if (endDatePicker) {
-      endDatePicker.set("minDate", selectedDates[0]);
+      endDatePicker.set("minDate", dateStr);
     }
   },
   onChange: function (selectedDates, dateStr, instance) {
     const endDatePicker = document.getElementById("endDate")._flatpickr;
     if (endDatePicker) {
-      endDatePicker.set("minDate", selectedDates[0]);
+      // Update minDate of endDatePicker to be the next day of startDate
+      endDatePicker.set("minDate", new Date(selectedDates[0]).fp_incr(1));
     }
   },
 });
@@ -21,14 +22,14 @@ flatpickr("#endDate", {
   onClose: function (selectedDates, dateStr, instance) {
     const startDatePicker = document.getElementById("startDate")._flatpickr;
     if (startDatePicker) {
-      startDatePicker.set("maxDate", selectedDates[0]);
+      startDatePicker.set("maxDate", dateStr);
     }
   },
   onChange: function (selectedDates, dateStr, instance) {
     const startDatePicker = document.getElementById("startDate")._flatpickr;
     if (startDatePicker) {
       // Update maxDate of startDatePicker to be the previous day of endDate
-      startDatePicker.set("maxDate", selectedDates[0]);
+      startDatePicker.set("maxDate", new Date(selectedDates[0]).fp_incr(-1));
     }
   },
 });

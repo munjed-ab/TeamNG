@@ -65,12 +65,22 @@ $(document).ready(function () {
       },
     });
   }
-
+  const options = {
+    dateStyle: "medium",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  };
   function updateTable(response) {
-    console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
-
+    if (response.length == 0) {
+      var row = $("<tr>").appendTo(logs_table_body);
+      $("<td style='text-align: center;' colspan='9'>")
+        .text("No Data")
+        .appendTo(row);
+      return;
+    }
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
@@ -80,7 +90,8 @@ $(document).ready(function () {
 
       $("<td>").text(log.activity).appendTo(row);
       $("<td>").text(log.department).appendTo(row);
-      $("<td>").text(new Date(log.date).toDateString()).appendTo(row);
+      $("<td>").text(log.location).appendTo(row);
+      $("<td>").text(log.date).appendTo(row);
       $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
       $("<td>").text(log.details).appendTo(row);
     });
@@ -113,6 +124,27 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      //TODO: solve the hell out of this task already!!!!
+      // Get the range of the sheet
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+
+      // Calculate the number of rows
+      const totalRows = range.e.r - range.s.r + 1;
+      for (let index = 2; index < totalRows + 2; index++) {
+        if (ws[`H${index}`]) {
+          ws[`H${index}`].z = "#,##0.00";
+          ws[`H${index}`].t = "n";
+        }
+        if (ws[`G${index}`]) {
+          ws[`G${index}`].z = "d-mmm-yyyy";
+          ws[`G${index}`].t = "d";
+        }
+        if (ws[`A${index}`] && !isNaN(ws[`A${index}`])) {
+          ws[`A${index}`].z = "d-mmm-yyyy [hh:mm:ss]";
+          ws[`A${index}`].t = "d";
+        }
+      }
+
       ws["!cols"] = [
         { wpx: 80 },
         { wpx: 80 },
@@ -127,6 +159,7 @@ $(document).ready(function () {
         { wpx: 80 },
       ];
       ws["!rows"] = [{ hpx: 30 }];
+
       var month = $("#month-filter").val();
       var year = $("#year-filter").val();
       if (month == "all") {
@@ -154,7 +187,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `activities_report_in_${year}_${month}_of_${user}_${dept}_${pro}.xlsb`
+        `activities_report_in_${year}_${month}_of_${user}_${dept}_${pro}.xlsx`
       );
     });
   handleFilterChange(); // Initial call to load data

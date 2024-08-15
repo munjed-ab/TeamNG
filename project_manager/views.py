@@ -6,17 +6,18 @@ from django.contrib.auth.decorators import login_required
 from .models import CustomUser, Project, Activity, Leave, Holiday, ActivityLogs, Profile, Role
 from .forms import ProfileImageForm
 from decimal import Decimal
-from datetime import *
+from datetime import date
 import calendar
+from calendar import monthcalendar, SATURDAY
 from django.contrib import messages
 from datetime import datetime, timedelta
-from django.db.models import Q
 from django.db import transaction
 from .tasks import send_notification_email, send_notification_email_recieve_manager, send_notification_email_recieve_admin
 import pandas as pd
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
+import copy
 
 
 
@@ -56,14 +57,13 @@ def get_firstday_current_last_month():
     last_month = today.month - 1 if today.month > 1 else 12
     last_year = today.year if today.month > 1 else today.year - 1
     first_day_last_month = date(last_year, last_month, 1)
-    first_day_last_month.strftime(f'%Y-%m-%d')
+    first_day_last_month.strftime(r'%Y-%m-%d')
 
     # Get the last day of the current month
     last_day_current_month = calendar.monthrange(today.year, today.month)[1]
     last_day_current_month = date(today.year, today.month, last_day_current_month)
-    last_day_current_month.strftime(f'%Y-%m-%d')
+    last_day_current_month.strftime(r'%Y-%m-%d')
     return  first_day_last_month, last_day_current_month
-
 
 
 def isLeaveDay(user, date):
@@ -75,7 +75,7 @@ def isLeaveDay(user, date):
         is_approved = True
     )
     # need improvement
-    datetime_object = datetime.strptime(date, f"%Y-%m-%d")
+    datetime_object = datetime.strptime(date, r"%Y-%m-%d")
     date_object = datetime_object.date()
 
     return any(leave.start_date <= date_object <= leave.end_date for leave in leave_days)
@@ -107,10 +107,14 @@ def is_within_current_past_month(q_date):
 def check_is_sun_sat(date):
     if date:
         date = pd.Timestamp(date)
-        if date.dayofweek == 6:
+        if date.dayofweek == 6:  # Sunday
             return True
-        if date.dayofweek == 5:
-            if 7 < date.day <= 14 or 21 < date.day <= 28:
+        if date.dayofweek == 5:  # Saturday
+            month_cal = monthcalendar(date.year, date.month)
+            saturdays = [week[SATURDAY] for week in month_cal if week[SATURDAY] != 0]
+            second_saturday = saturdays[1]
+            last_saturday = saturdays[-1]
+            if date.day == second_saturday or date.day == last_saturday:
                 return True
             else:
                 return False
@@ -171,13 +175,18 @@ def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True, ex
 
     # get all saterdays
     saturdays = [date for date in filtered_dates if date.dayofweek == 5]
-    banned_saterdays = [
-        saturday
-        for saturday in saturdays
-        if (7 < saturday.day <= 14) or (21 < saturday.day <= 28)
-    ]
 
-    filtered_dates = [date for date in filtered_dates if date not in banned_saterdays]
+    banned_saturdays = []
+    for sat in saturdays:
+        month_cal = monthcalendar(sat.year, sat.month)
+        month_saturdays = [week[SATURDAY] for week in month_cal if week[SATURDAY] != 0]
+        if len(month_saturdays) > 1:
+            second_saturday = month_saturdays[1]
+            last_saturday = month_saturdays[-1]
+            banned_saturdays.extend([pd.Timestamp(sat.year, sat.month, second_saturday),
+                                     pd.Timestamp(sat.year, sat.month, last_saturday)])
+
+    filtered_dates = [date for date in filtered_dates if date not in banned_saturdays]
 
     count_no_holidays = len(filtered_dates)
     weekends_count = len(date_range) - len(filtered_dates)
@@ -251,8 +260,8 @@ def logout_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are disabled.")
+
         logout(request)
         return redirect("login")
     
@@ -275,7 +284,7 @@ def check_location(request) -> str | None:
             messages.error(request, f"Your Location is: {request.user.location.loc_name}.activity.teamnigeria.com.ng")
             return None
     else:
-        messages.error(request, f"Someting went wrong with you location url.")
+        messages.error(request, "Someting went wrong with you location url.")
         return None
     return str(location)
 
@@ -284,8 +293,8 @@ def dashboard(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are disabled.")
+
         logout(request)
         return redirect("login")
 
@@ -305,8 +314,8 @@ def registerhours(request, date_picked):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are disabled.")
+        
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -358,9 +367,9 @@ def registerhours(request, date_picked):
         if check_holiday(holidays, q_date):
             is_holiday = True
         ###############
-    except:
-        messages.error(request,f"Canceled. \
-        Invalid Date.")
+    except Exception:
+        messages.error(request,"Canceled. Invalid Date.")
+
         return redirect("dashboard")
 
     entry_logs = ActivityLogs.objects.filter(
@@ -392,8 +401,7 @@ def activity_log(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -402,13 +410,21 @@ def activity_log(request):
 
     today = date.today()
     q = request.GET.get("q",today)
-
+    
+    date_picked = datetime.strptime(str(q), r"%Y-%m-%d").date()
+    yesterday = (date_picked - timedelta(days=1)).strftime(r"%Y-%m-%d")
+    tomorrow = (date_picked + timedelta(days=1)).strftime(r"%Y-%m-%d")
     entry_logs = ActivityLogs.objects.filter(
         user = request.user.id,
         date = q
     ).order_by("-created")
 
-    context = {"entry_logs":entry_logs, "date":q}
+    context = {
+        "entry_logs":entry_logs,
+        "date":date_picked,
+        "yesterday":str(yesterday),
+        "tomorrow":str(tomorrow)
+          }
     return render(request, 'project_manager/main_pages/activity_log.html', context)
 
 @transaction.atomic
@@ -416,8 +432,7 @@ def update_entry(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -505,7 +520,7 @@ def update_entry(request, pk):
             old_entry.save()
             messages.success(request,
             "Activity has been updated successfully.")
-        except:
+        except Exception:
             messages.error(request,"Canceled. \
             Something went wrong :(")
             return redirect("activitylogs")
@@ -524,8 +539,7 @@ def delete_entry(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -547,8 +561,7 @@ def addleave(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -559,20 +572,20 @@ def addleave(request):
     admin_role = Role.objects.get(name="Admin")
 
     admins = CustomUser.objects.filter(
-        role = admin_role.id,
+        Q(role=admin_role.id),
+        ~Q(is_superuser=True),
         location = request.user.location,
         department = request.user.department,
-        is_superuser=False
     )
 
     managers = CustomUser.objects.filter(
-        role = manager_role.id,
+        Q(role=manager_role.id),
+        ~Q(is_superuser=True),
         location = request.user.location,
         department = request.user.department,
-        is_superuser=False
     )
     if not managers:
-        managers = admins[:]
+        managers = copy.deepcopy(admins)
 
     if request.method == "POST":
         start_date = request.POST.get("startDate")
@@ -583,9 +596,9 @@ def addleave(request):
             total_leave_days = 0 #real days to view it
             if start_date and end_date:
 
-                start_date = datetime.strptime(start_date, f"%Y-%m-%d")
+                start_date = datetime.strptime(start_date, r"%Y-%m-%d")
                 start_date = start_date.date()
-                end_date = datetime.strptime(end_date, f"%Y-%m-%d")
+                end_date = datetime.strptime(end_date, r"%Y-%m-%d")
                 end_date = end_date.date()
                 total_leave_days = (end_date - start_date).days + 1
 
@@ -650,7 +663,7 @@ def addleave(request):
             messages.success(request,
             "Request has been sent successfully.")
 
-        except:
+        except Exception:
             messages.error(request, "Canceled. \
             Something went wrong :(")
             return redirect('addleave')
@@ -663,8 +676,7 @@ def notifications(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -729,7 +741,7 @@ def notifications(request):
                 Invalid Operation.")
                 return redirect('notifications')
 
-        except:
+        except Exception:
             messages.error(request,"Canceled. \
             something went wrong :(")
             return redirect('notifications')
@@ -745,8 +757,7 @@ def leave_log(request):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -793,8 +804,7 @@ def update_leave(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -803,24 +813,24 @@ def update_leave(request, pk):
 
     leave = Leave.objects.get(id=pk)
 
-    admin_role = Role.objects.get(name="Admin")
     manager_role = Role.objects.get(name="Manager")
+    admin_role = Role.objects.get(name="Admin")
 
     admins = CustomUser.objects.filter(
-        role=admin_role.id,
-        department=request.user.department,
-        location=request.user.location,
-        is_superuser=False
+        Q(role=admin_role.id),
+        ~Q(is_superuser=True),
+        location = request.user.location,
+        department = request.user.department,
     )
 
     managers = CustomUser.objects.filter(
-        role=manager_role.id,
-        department=request.user.department,
-        location=request.user.location,
-        is_superuser=False
+        Q(role=manager_role.id),
+        ~Q(is_superuser=True),
+        location = request.user.location,
+        department = request.user.department,
     )
     if not managers:
-        managers = admins[:]
+        managers = copy.deepcopy(admins)
 
     if request.method == "POST":
         if leave.is_approved or leave.is_rejected:
@@ -832,15 +842,18 @@ def update_leave(request, pk):
         end_date = request.POST.get("endDate")
         leave_type = request.POST.get("leaveType")
 
-        start_date = datetime.strptime(start_date, f"%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date, f"%Y-%m-%d").date()
+        start_date = datetime.strptime(start_date, r"%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, r"%Y-%m-%d").date()
         days = (end_date - start_date).days + 1
 
         if checkActivityInLeaveDays(request.user, start_date, end_date):
             messages.error(request,
             "Canceled. Pick dates where you have not worked at.")
             return redirect('leave_logs')
-        
+        if leave_overlap(request.user, start_date, end_date):
+            messages.error(request,
+            "Canceled. You already have a leave on these days.")
+            return redirect('addleave')
         try:
             with transaction.atomic():
                 if request.user.role.name=="Manager":
@@ -879,8 +892,7 @@ def delete_leave(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -917,8 +929,7 @@ def profile(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -934,8 +945,7 @@ def profile(request, pk):
 @transaction.atomic
 def upload_profile_image(request):
     if request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1026,8 +1036,7 @@ def report_user_activity(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1047,8 +1056,7 @@ def report_user_project(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1069,8 +1077,7 @@ def report_user_leave(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1089,8 +1096,7 @@ def report_user_expectedhours(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1110,8 +1116,7 @@ def report_user_pro_act(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):
@@ -1134,8 +1139,7 @@ def report_user_pro_user(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         logout(request)
         return redirect("login")
     # if not check_location(request):

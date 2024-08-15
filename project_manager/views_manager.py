@@ -1,9 +1,7 @@
 from django.shortcuts import render, redirect
 from .models import CustomUser, Project, Activity, Role
 from django.contrib import messages
-from django.db.models import F, Sum, Q
-from django.contrib.auth import logout
-from .views import check_location
+from django.db.models import Q
 
 #################################################
 #  __  __                                       #
@@ -26,8 +24,7 @@ def manager_overview(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Manager":
         redirect("dashboard")
@@ -81,8 +78,7 @@ def report_manager_act(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -116,8 +112,7 @@ def report_manager_pro(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -150,8 +145,7 @@ def report_manager_leave(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -182,8 +176,7 @@ def report_manager_overview(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -216,8 +209,7 @@ def report_manager_pro_act(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -254,8 +246,7 @@ def report_manager_pro_user(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,
@@ -292,8 +283,7 @@ def report_manager_missed_hours(request, pk):
     if not request.user.is_authenticated:
         return redirect("login")
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are disabled.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not request.user.role.name=="Manager":
         messages.error(request,

@@ -87,7 +87,7 @@ $(document).ready(function () {
     var row1 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "RGB(99, 136, 199)", color: "white" });
-    $("<td>").text("Expected Hours").appendTo(row1);
+    $("<td>").text("expected hours").appendTo(row1);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -98,7 +98,7 @@ $(document).ready(function () {
     var row2 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--success)", color: "white" });
-    $("<td>").text("Worked Hours").appendTo(row2);
+    $("<td>").text("worked hours").appendTo(row2);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -109,7 +109,7 @@ $(document).ready(function () {
     var row3 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--danger)", color: "white" });
-    $("<td>").text("Missed Hours").appendTo(row3);
+    $("<td>").text("missed hours").appendTo(row3);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -120,7 +120,7 @@ $(document).ready(function () {
     var row4 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--blue)", color: "white" });
-    $("<td>").text("Public Holiday Hours").appendTo(row4);
+    $("<td>").text("public holiday hours").appendTo(row4);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -131,7 +131,7 @@ $(document).ready(function () {
     var row5 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--dark)", color: "white" });
-    $("<td>").text("Leave Days Hours").appendTo(row5);
+    $("<td>").text("leave days hours").appendTo(row5);
     $("<td>")
       .text(
         new Intl.NumberFormat().format(
@@ -142,7 +142,7 @@ $(document).ready(function () {
     var row6 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--info)", color: "white" });
-    $("<td>").text("Percent Complete").appendTo(row6);
+    $("<td>").text("percent complete").appendTo(row6);
     $("<td>")
       .text(`${parseFloat(response.all.percent_complete).toFixed(2)}%`)
       .appendTo(row6);
@@ -187,13 +187,44 @@ $(document).ready(function () {
             ws[`B${i}`].z = "0.00%";
           }
         }
-        if (ws[`B${projects_count + 1 + 1 + 6}`]) {
+        if (
+          ws[`B${projects_count + 1 + 1 + 6}`] &&
+          ws[`B${1 + 1 + 1 + 1}`] &&
+          ws[`B${1 + 1 + 1 + 2}`] &&
+          ws[`B${1 + 1 + 1 + 3}`] &&
+          ws[`B${1 + 1 + 1 + 4}`] &&
+          ws[`B${1 + 1 + 1 + 5}`]
+        ) {
           ws[`B${projects_count + 1 + 1 + 6}`].z = "0.00%";
+          ws[`B${projects_count + 1 + 1 + 1}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 2}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 3}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 4}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 5}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 1}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 2}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 3}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 4}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 5}`].t = "n";
         } // 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
       } else {
-        if (ws["B2"] && ws["B3"] && ws[`B${1 + 1 + 1 + 6}`]) {
+        if (
+          ws["B2"] &&
+          ws["B3"] &&
+          ws[`B${1 + 1 + 1 + 6}`] &&
+          ws[`B${1 + 1 + 1 + 1}`] &&
+          ws[`B${1 + 1 + 1 + 2}`] &&
+          ws[`B${1 + 1 + 1 + 3}`] &&
+          ws[`B${1 + 1 + 1 + 4}`] &&
+          ws[`B${1 + 1 + 1 + 5}`]
+        ) {
           ws["B2"].z = "0.00%";
           ws["B3"].z = "0.00%";
+          ws[`B${1 + 1 + 1 + 1}`].t = "n";
+          ws[`B${1 + 1 + 1 + 2}`].t = "n";
+          ws[`B${1 + 1 + 1 + 3}`].t = "n";
+          ws[`B${1 + 1 + 1 + 4}`].t = "n";
+          ws[`B${1 + 1 + 1 + 5}`].t = "n";
           ws[`B${1 + 1 + 1 + 6}`].z = "0.00%"; //1 (one project) + 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
         }
       }
@@ -218,7 +249,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `expected_hours_report_in_${year}_${month}_of_${user}_${pro}.xlsb`
+        `expected_hours_report_in_${year}_${month}_of_${user}_${pro}.xlsx`
       );
     });
   handleFilterChange(); // Initial call to load data

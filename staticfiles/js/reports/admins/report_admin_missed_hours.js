@@ -74,6 +74,7 @@ $(document).ready(function () {
       $("<td>").text(log.name).appendTo(row);
       $("<td>").text(log.role).appendTo(row);
       $("<td>").text(log.department).appendTo(row);
+      $("<td>").text(log.location).appendTo(row);
       $("<td>")
         .css({ "background-color": "var(--success)", color: "white" })
         .text(
@@ -133,6 +134,28 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+
+      // Calculate the number of rows
+      const totalRows = range.e.r - range.s.r + 1;
+      for (let index = 2; index < totalRows + 2; index++) {
+        if (ws[`E${index}`]) {
+          ws[`E${index}`].z = "#,##0.00";
+          ws[`E${index}`].t = "n";
+        }
+        if (ws[`F${index}`]) {
+          ws[`F${index}`].z = "#,##0.00";
+          ws[`F${index}`].t = "n";
+        }
+        if (ws[`G${index}`]) {
+          ws[`G${index}`].z = "#,##0.00";
+          ws[`G${index}`].t = "n";
+        }
+        if (ws[`H${index}`]) {
+          ws[`H${index}`].z = "#,##0.00";
+          ws[`H${index}`].t = "n";
+        }
+      }
       ws["!cols"] = [
         { wpx: 80 },
         { wpx: 80 },
@@ -169,7 +192,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `missed_hours_report_in_${year}_${month}_of_${user}_${dept}.xlsb`
+        `missed_hours_report_in_${year}_${month}_of_${user}_${dept}.xlsx`
       );
     });
   handleFilterChange(); // Initial call to load data

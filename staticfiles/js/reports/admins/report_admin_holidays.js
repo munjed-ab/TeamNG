@@ -60,15 +60,20 @@ $(document).ready(function () {
   }
 
   function updateTable(response) {
-    console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
-
+    if (response.length == 0) {
+      var row = $("<tr>").appendTo(logs_table_body);
+      $("<td style='text-align: center;' colspan='2'>")
+        .text("No Data")
+        .appendTo(row);
+      return;
+    }
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
       $("<td>").text(log.name).appendTo(row);
-      $("<td>").text(new Date(log.date).toDateString()).appendTo(row);
+      $("<td>").text(log.date).appendTo(row);
     });
   }
 
@@ -87,6 +92,16 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+
+      // Calculate the number of rows
+      const totalRows = range.e.r - range.s.r + 1;
+      for (let index = 2; index < totalRows + 2; index++) {
+        if (ws[`B${index}`]) {
+          ws[`B${index}`].z = "d-mmm-yyyy";
+          ws[`B${index}`].t = "d";
+        }
+      }
       ws["!cols"] = [
         { wpx: 80 },
         { wpx: 80 },
@@ -107,7 +122,7 @@ $(document).ready(function () {
         month = "_";
       }
 
-      XLSX.writeFile(wb, `holidays_report_in_${year}_${month}.xlsb`);
+      XLSX.writeFile(wb, `holidays_report_in_${year}_${month}.xlsx`);
     });
   handleFilterChange();
 });

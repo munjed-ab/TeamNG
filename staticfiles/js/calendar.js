@@ -107,17 +107,33 @@ document.addEventListener("DOMContentLoaded", function () {
       const dayOfWeek = arg.date.getDay();
       const dayOfMonth = arg.date.getDate();
       const eventEl = arg.el;
+      const date = new Date(arg.date);
+      const month = date.getMonth();
+      const year = date.getFullYear();
+
+      // Check if the date is a Sunday
       if (dayOfWeek === 0) {
-        eventEl.style.backgroundColor = "rgb(222 223 233)"; //rgb(209, 153, 153) #f7f9ff rgb(222 223 233)
-        eventEl.add;
+        eventEl.style.backgroundColor = "rgb(222 223 233)";
       }
 
-      if (
-        dayOfWeek === 6 &&
-        ((dayOfMonth > 7 && dayOfMonth <= 14) ||
-          (dayOfMonth > 21 && dayOfMonth <= 28))
-      ) {
-        eventEl.style.backgroundColor = "rgb(222 223 233)";
+      // Check if the date is a Saturday
+      if (dayOfWeek === 6) {
+        const monthDays = new Date(year, month + 1, 0).getDate();
+        const saturdays = [];
+
+        for (let i = 1; i <= monthDays; i++) {
+          const tempDate = new Date(year, month, i);
+          if (tempDate.getDay() === 6) {
+            saturdays.push(i);
+          }
+        }
+
+        const secondSaturday = saturdays[1];
+        const lastSaturday = saturdays[saturdays.length - 1];
+
+        if (dayOfMonth === secondSaturday || dayOfMonth === lastSaturday) {
+          eventEl.style.backgroundColor = "rgb(222 223 233)";
+        }
       }
     },
     headerToolbar: {
@@ -167,22 +183,39 @@ function checkWeekDays(info) {
   const eventDate = info.event.start;
   const dayOfWeek = eventDate.getDay();
   const dayOfMonth = eventDate.getDate();
-  const eventEl = info.el;
   const event = info.event;
+  const date = new Date(eventDate);
+  const month = date.getMonth();
+  const year = date.getFullYear();
 
-  // Check if it's Sunday or Saturday on the 2nd and 4th weeks of the month
-  if (
-    dayOfWeek === 0 ||
-    (dayOfWeek === 6 &&
-      ((dayOfMonth > 7 && dayOfMonth <= 14) ||
-        (dayOfMonth > 21 && dayOfMonth <= 28)))
-  ) {
-    // Set background color to red
-    // Set event title to 'holiday'
+  // Check if it's Sunday
+  if (dayOfWeek === 0) {
     if (event.title != "leave") {
       event.remove();
     }
-    // Indicate that the event has been modified
+    return;
+  }
+
+  // Check if it's a Saturday
+  if (dayOfWeek === 6) {
+    const monthDays = new Date(year, month + 1, 0).getDate();
+    const saturdays = [];
+
+    for (let i = 1; i <= monthDays; i++) {
+      const tempDate = new Date(year, month, i);
+      if (tempDate.getDay() === 6) {
+        saturdays.push(i);
+      }
+    }
+
+    const secondSaturday = saturdays[1];
+    const lastSaturday = saturdays[saturdays.length - 1];
+
+    if (dayOfMonth === secondSaturday || dayOfMonth === lastSaturday) {
+      if (event.title != "leave") {
+        event.remove();
+      }
+    }
   }
 }
 
@@ -193,17 +226,32 @@ function checkWeekDays(info) {
  * @return {void}
  */
 function setColorGradient(info) {
+  const eventDate = info.event.start;
+  const dayOfWeek = eventDate.getDay();
   const eventEl = info.el;
   let str = info.event.title;
   str = str.slice(0, -1);
   let isnum = /^[\d.]+$/.test(str);
 
   if (isnum) {
-    const hoursWorked = parseFloat(info.event.title);
-    const color = calculateColor(hoursWorked);
-    eventEl.style.backgroundColor = color;
-    eventEl.style.textAlign = "center";
-    eventEl.style.fontSize = "18px";
+    if (dayOfWeek == 6) {
+      const hoursWorked = parseFloat(info.event.title);
+      var color = "RGB(99, 136, 199)";
+      if (hoursWorked == 3) {
+        color = "RGB(43, 166, 98)";
+      } else {
+        color = calculateColor(hoursWorked);
+      }
+      eventEl.style.backgroundColor = color;
+      eventEl.style.textAlign = "center";
+      eventEl.style.fontSize = "18px";
+    } else {
+      const hoursWorked = parseFloat(info.event.title);
+      const color = calculateColor(hoursWorked);
+      eventEl.style.backgroundColor = color;
+      eventEl.style.textAlign = "center";
+      eventEl.style.fontSize = "18px";
+    }
   } else {
     eventEl.style.textAlign = "center";
     eventEl.style.fontSize = "18px";
@@ -217,7 +265,7 @@ function setColorGradient(info) {
  * @return {string} The calculated color in the format "rgb(r, g, b)".
  */
 function calculateColor(hoursWorked) {
-  const least = [113, 155, 161]; //our last color :113, 155, 161 .rgb(99 139 145) old:140, 199, 207 ,,new rgb(127 148 151)
+  const least = [113, 155, 161]; //rgb(99 139 145) old:140, 199, 207 ,,new rgb(127 148 151)
   const middle = [99, 136, 199];
   const most = [43, 166, 98];
 

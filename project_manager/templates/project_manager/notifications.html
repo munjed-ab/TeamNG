@@ -30,8 +30,8 @@
             {{ request.from_user.first_name|title }}
             {{request.from_user.last_name|title }}
           </td>
-          <td>{{ request.start_date|date:"Y-m-d"}}</td>
-          <td>{{ request.end_date|date:"Y-m-d" }}</td>
+          <td>{{ request.start_date|date:"d-M-Y"}}</td>
+          <td>{{ request.end_date|date:"d-M-Y" }}</td>
           <td>{{ request.leave_type|upper }}</td>
           <td>{{ request.total_leave_days }}</td>
           <td>{{ request.created|timesince }} ago</td>
@@ -81,8 +81,8 @@
               {{respond.to_user.first_name|title}}
               <i style="color: red">rejected</i> your request for
               {{respond.total_leave_days }} days from
-              {{respond.start_date|date:"Y-m-d"}} to
-              {{respond.end_date|date:"Y-m-d"}}
+              {{respond.start_date|date:"d-M-Y"}} to
+              {{respond.end_date|date:"d-M-Y"}}
               <sup
                 ><i style="color: royalblue"
                   >{{respond.updated|timesince }} ago</i
@@ -108,8 +108,8 @@
               {{respond.to_user.first_name|title}}
               <i style="color: green">approved</i> your request for
               {{respond.total_leave_days }} days from
-              {{respond.start_date|date:"Y-m-d"}} to
-              {{respond.end_date|date:"Y-m-d"}}
+              {{respond.start_date|date:"d-M-Y"}} to
+              {{respond.end_date|date:"d-M-Y"}}
               <sup
                 ><i style="color: royalblue"
                   >{{respond.updated|timesince }} ago</i

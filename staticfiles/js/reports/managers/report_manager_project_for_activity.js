@@ -197,7 +197,7 @@ $(document).ready(function () {
 
       XLSX.writeFile(
         wb,
-        `project_for_activity_report_in_${year}_${month}_of_${user}.xlsb`
+        `project_for_activity_report_in_${year}_${month}_of_${user}.xlsx`
       );
     });
   $("#tableModal .btn-close").click(function () {

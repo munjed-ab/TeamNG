@@ -25,6 +25,11 @@ $(document).ready(function () {
   $("#addactivity").click(function () {
     var projectName = $("#projectName").val();
     var activityName = $("#activityName").val();
+    if (!projectName || !activityName) {
+      createToast(`Please enter a Project and an Activity type.`, "error");
+      $("#quantity").val("");
+      return;
+    }
     var date = JSON.parse(document.getElementById("date").textContent);
     var details = $("#details").val();
     var hours = $("#quantity").val();
@@ -63,7 +68,6 @@ $(document).ready(function () {
     };
 
     data.push(activityLog);
-    console.log(data);
     //localStorage.setItem("activityData", JSON.stringify(data));
 
     $(".new-entries").append(
@@ -83,12 +87,14 @@ $(document).ready(function () {
         "<td>" +
         details +
         "</td>" +
-        "<td><div class='update-icon float-left editBtn'> <i class='fas fa-pencil-alt mr-2 text-primary fa-1x'></i> </div><div class='delete-icon float-right deleteBtn'><i class='fas fa-trash-alt mr-5 text-danger fa-1x'></i></div></td>" +
+        "<td> <div class='row'> <div class='update-icon col-sm-6 col-xs-6 editBtn'> <i class='fas fa-pencil-alt mr-2 text-primary fa-1x'></i> </div><div class='col-sm-6 col-xs-6 delete-icon deleteBtn'><i class='fas fa-trash-alt mr-5 text-danger fa-1x'></i></div> </div></td>" +
         "</tr>"
     );
     document.getElementById("save-button").style.display = "inline-block";
     $("#details").val("");
     $("#quantity").val("");
+    $("#activityName").val("");
+    $("#projectName").val("");
   });
 
   $(document).on("click", ".deleteBtn", function () {

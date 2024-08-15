@@ -1,21 +1,22 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
 from .models import CustomUser, Project, Activity, Holiday, Department, Location, Role
-from datetime import *
-from django.db.models import F, Sum, Q
+from datetime import datetime
+from django.db.models import Q
 from django.contrib import messages
 from django.db import transaction
 from .forms import CustomUserForm, CustomUserUpdateForm, ProjectForm, ActivityForm, DepartmentForm, LocationForm, HolidayForm
 from django.core.exceptions import ValidationError
 from .tasks import send_signup_email
 from .api.views import getUserSupervisor
-from .views import check_location
 
+import logging
+logging.basicConfig(filename='debug.log' ,level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def holiday_overlap(date):
-    holiday_date = datetime.strptime(date, f"%Y-%m-%d")
+    holiday_date = datetime.strptime(date, r"%Y-%m-%d")
     holidays = Holiday.objects.filter(
         holiday_date=holiday_date
     )
@@ -37,32 +38,33 @@ def users(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
     # if not check_location(request):
     #     logout(request)
     #     return redirect("login")
-    
+    logger.debug('Entered Users..')
     dir = Role.objects.get(name="Director")
-
-    users = CustomUser.objects.filter(
-        ~Q(role=dir.id),
-        location=request.user.location.id,
-        is_superuser = False,
-    ).order_by("username")
+    if request.user.is_superuser:
+        users = CustomUser.objects.all()
+    else:
+        users = CustomUser.objects.filter(
+            ~Q(role=dir.id),
+            location=request.user.location.id,
+            is_superuser = False,
+        ).order_by("username")
 
     _users = []
     for user in users:
         _user = {}
         _user["ID"] = str(user.id)
         _user["profile"] = str(user.profile.profile_img.url)
-        _user["username"] = str(user.username)
-        _user["location"] = str(user.location.loc_name)
-        _user["first_name"] = str(user.first_name)
-        _user["last_name"] = str(user.last_name)
+        _user["username"] = str(user.username).capitalize()
+        _user["location"] = str(user.location.loc_name).upper()
+        _user["first_name"] = str(user.first_name).capitalize()
+        _user["last_name"] = str(user.last_name).capitalize()
         _user["email"] = str(user.email)
         _user["role"] = str(user.role)
         _user["super"] = getUserSupervisor(user)
@@ -79,8 +81,7 @@ def create_new_user(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -119,8 +120,7 @@ def edit_user(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -175,8 +175,7 @@ def projects(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -197,8 +196,7 @@ def create_project(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -227,8 +225,7 @@ def edit_project(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -255,8 +252,7 @@ def activities(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -276,8 +272,7 @@ def create_activity(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -306,8 +301,7 @@ def edit_activity(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -334,8 +328,7 @@ def departments(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -355,8 +348,7 @@ def create_dept(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -385,8 +377,7 @@ def edit_dept(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -413,8 +404,7 @@ def locations(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -433,8 +423,7 @@ def create_loc(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -462,8 +451,7 @@ def edit_loc(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -489,8 +477,7 @@ def holidays(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -510,8 +497,7 @@ def create_holiday(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -534,8 +520,8 @@ def create_holiday(request):
                 form.save()
                 messages.success(request, "Holiday has been added successfully.")
                 return redirect("holidays")
-            except:
-                messages.error(request, "Holiday name must not be numerical.")
+            except Exception as e:
+                messages.error(request, f"Holiday name must not be numerical. {e}")
         else:
             messages.error(request, "Invalid inputs")
     
@@ -550,8 +536,7 @@ def edit_holiday(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not request.user.role.name=="Admin":
         redirect("dashboard")
@@ -585,7 +570,6 @@ def edit_holiday(request, pk):
 
 
 
-
 ##########################################################################################
 #                       _           _        ____                       _                #
 #     /\               | |         (_)      / __ \                     (_)               #
@@ -603,8 +587,7 @@ def overview(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     if not (request.user.ov or request.user.role.name == "Admin" or request.user.role.name == "Director"):
         redirect("dashboard")
@@ -647,8 +630,7 @@ def report_admin_act(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -681,8 +663,7 @@ def report_admin_pro(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -715,8 +696,7 @@ def report_admin_leave(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -749,8 +729,7 @@ def report_admin_overview(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -784,8 +763,7 @@ def report_admin_pro_act(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -820,8 +798,7 @@ def report_holiday(request):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -838,8 +815,7 @@ def report_admin_missed_hours(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,
@@ -872,8 +848,8 @@ def report_admin_pro_user(request, pk):
     if not request.user.is_authenticated:
         redirect('login')
     elif request.user.disabled:
-        messages.error(request,f"Sorry. \
-        You are banned.")
+        messages.error(request,"Sorry. You are banned.")
+        
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,

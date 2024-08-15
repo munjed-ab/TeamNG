@@ -188,6 +188,7 @@ body {
   flex-direction: column; /* Ensures items stack vertically */
   height: 90vh; /* Adjust as needed */
 }
+
 .submit-update-btn {
   margin: 10px;
   display: flex;

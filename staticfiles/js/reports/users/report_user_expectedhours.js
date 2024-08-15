@@ -164,13 +164,44 @@ $(document).ready(function () {
             ws[`B${i}`].z = "0.00%";
           }
         }
-        if (ws[`B${projects_count + 1 + 1 + 6}`]) {
+        if (
+          ws[`B${projects_count + 1 + 1 + 6}`] &&
+          ws[`B${1 + 1 + 1 + 1}`] &&
+          ws[`B${1 + 1 + 1 + 2}`] &&
+          ws[`B${1 + 1 + 1 + 3}`] &&
+          ws[`B${1 + 1 + 1 + 4}`] &&
+          ws[`B${1 + 1 + 1 + 5}`]
+        ) {
           ws[`B${projects_count + 1 + 1 + 6}`].z = "0.00%";
+          ws[`B${projects_count + 1 + 1 + 1}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 2}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 3}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 4}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 5}`].z = "#,##0.00";
+          ws[`B${projects_count + 1 + 1 + 1}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 2}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 3}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 4}`].t = "n";
+          ws[`B${projects_count + 1 + 1 + 5}`].t = "n";
         } // 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
       } else {
-        if (ws["B2"] && ws["B3"] && ws[`B${1 + 1 + 1 + 6}`]) {
+        if (
+          ws["B2"] &&
+          ws["B3"] &&
+          ws[`B${1 + 1 + 1 + 6}`] &&
+          ws[`B${1 + 1 + 1 + 1}`] &&
+          ws[`B${1 + 1 + 1 + 2}`] &&
+          ws[`B${1 + 1 + 1 + 3}`] &&
+          ws[`B${1 + 1 + 1 + 4}`] &&
+          ws[`B${1 + 1 + 1 + 5}`]
+        ) {
           ws["B2"].z = "0.00%";
           ws["B3"].z = "0.00%";
+          ws[`B${1 + 1 + 1 + 1}`].t = "n";
+          ws[`B${1 + 1 + 1 + 2}`].t = "n";
+          ws[`B${1 + 1 + 1 + 3}`].t = "n";
+          ws[`B${1 + 1 + 1 + 4}`].t = "n";
+          ws[`B${1 + 1 + 1 + 5}`].t = "n";
           ws[`B${1 + 1 + 1 + 6}`].z = "0.00%"; //1 (one project) + 1 (header cell) + 1 (Leave cell) + 6 (static info cells) = (percent complete cell)
         }
       }
@@ -188,7 +219,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `expected_hours_report_in_${year}_${month}_of_${pro}.xlsb`
+        `expected_hours_report_in_${year}_${month}_of_${pro}.xlsx`
       );
     });
   handleFilterChange(); // Initial call to load data

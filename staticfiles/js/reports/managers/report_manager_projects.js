@@ -64,10 +64,15 @@ $(document).ready(function () {
   }
 
   function updateTable(response) {
-    console.log(response);
     var logs_table_body = $("#logs-table");
     logs_table_body.empty();
-
+    if (response.length == 0) {
+      var row = $("<tr>").appendTo(logs_table_body);
+      $("<td style='text-align: center;' colspan='4'>")
+        .text("No Data")
+        .appendTo(row);
+      return;
+    }
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
@@ -102,6 +107,16 @@ $(document).ready(function () {
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
+      const range = XLSX.utils.decode_range(ws["!ref"]);
+
+      // Calculate the number of rows
+      const totalRows = range.e.r - range.s.r + 1;
+      for (let index = 2; index < totalRows + 2; index++) {
+        if (ws[`D${index}`]) {
+          ws[`D${index}`].z = "#,##0.00";
+          ws[`D${index}`].t = "n";
+        }
+      }
       ws["!cols"] = [
         { wpx: 80 },
         { wpx: 80 },
@@ -136,7 +151,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `projects_report_in_${year}_${month}_of_${user}_${pro}.xlsb`
+        `projects_report_in_${year}_${month}_of_${user}_${pro}.xlsx`
       );
     });
   handleFilterChange(); // Initial call to load data

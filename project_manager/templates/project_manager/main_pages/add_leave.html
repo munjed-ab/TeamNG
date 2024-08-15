@@ -25,7 +25,9 @@
         <label for="from" class="form-label">Admin</label>
         <select class="form-select" id="adminName" name="adminName" required>
           {% for admin in admins %}
-          <option value="{{ admin.username }}">{{ admin.username }}</option>
+          <option value="{{ admin.username }}">
+            {{ admin.first_name|capfirst }} {{admin.last_name|capfirst}}
+          </option>
           {% endfor %}
         </select>
       </div>
@@ -39,7 +41,9 @@
           required
         >
           {% for manager in managers %}
-          <option value="{{ manager.username }}">{{ manager.username }}</option>
+          <option value="{{ manager.username }}">
+            {{ manager.first_name|capfirst }} {{manager.last_name|capfirst}}
+          </option>
           {% endfor %}
         </select>
       </div>

@@ -201,7 +201,7 @@ $(document).ready(function () {
 
       XLSX.writeFile(
         wb,
-        `project_for_user_report_in_${year}_${month}_of_${user}.xlsb`
+        `project_for_user_report_in_${year}_${month}_of_${user}.xlsx`
       );
     });
 
