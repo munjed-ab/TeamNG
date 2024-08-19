@@ -21,7 +21,7 @@
         </tr>
       </thead>
       <tbody>
-        {% if entry_logs|length != 0 %} {% for request in leave_logs %}
+        {% if leave_logs|length != 0 %} {% for request in leave_logs %}
         <tr>
           <td>{{ request.from_user }}</td>
           <td>{{ request.to_user }}</td>

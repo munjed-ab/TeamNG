@@ -1,14 +1,10 @@
-from celery import shared_task, chain, group
+from celery import shared_task
 from .models import CustomUser
-from email.message import EmailMessage
 from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from django.templatetags.static import static
 from django.conf import settings
 import base64
-import os
 
 @shared_task(bind=True, max_retries=2)
 def send_signup_email(self, email_to):
