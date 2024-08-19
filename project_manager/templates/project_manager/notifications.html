@@ -4,6 +4,11 @@
   #responseMessage {
     padding-left: 20px;
   }
+  .no-data {
+    display: flex;
+    justify-content: center;
+    padding: 22px;
+  }
 </style>
 <div class="container">
   {% if leave_requests %}
@@ -121,6 +126,10 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+  {% else %}
+  <div class="no-data float-center">
+    <h2>No Notifications yet!</h2>
   </div>
   {% endif %}
   <div
