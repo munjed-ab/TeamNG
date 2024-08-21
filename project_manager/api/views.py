@@ -1473,7 +1473,8 @@ def get_user_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
-            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
+            percentage_all = (worked_hours/total_hours)*100 if total_hours > 0 else 0
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":percentage_all})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
@@ -1879,7 +1880,8 @@ def get_manager_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
-            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
+            percentage_all = (worked_hours/total_hours)*100 if total_hours > 0 else 0
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":percentage_all})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
@@ -2289,7 +2291,8 @@ def get_admin_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
-            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
+            percentage_all = (worked_hours/total_hours)*100 if total_hours > 0 else 0
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":percentage_all})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
