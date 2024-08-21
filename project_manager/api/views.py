@@ -1853,7 +1853,7 @@ def get_manager_pro_user_report(request, pk):
                 ~Q(role=adm.id),
                 ~Q(is_superuser=True),
                 location=manager.location.id,
-                department=manager.location.id
+                department=manager.department.id
             )
             if user_id != "all":
                 users = users.filter(id=int(user_id))
