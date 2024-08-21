@@ -62,7 +62,7 @@ $(document).ready(function () {
         year: year,
       },
       success: function (response) {
-        updateTable(response.report);
+        updateTable(response);
       },
       error: function (xhr, status, error) {
         console.error(xhr.responseText);
@@ -85,8 +85,10 @@ $(document).ready(function () {
         `<i id='expand' style='display: flex; justify-content: center;cursor:pointer;' class='fa fa-arrows-alt fa-4x' aria-hidden='true'></i>`
       )
       .appendTo(row_head);
-
-    response.forEach((all) => {
+    const report = response.report;
+    console.log(report);
+    const summ = response.all;
+    report.forEach((all) => {
       if (!users.includes(all.user.name)) {
         users.push(all.user.name);
         var col_head = $("<tr>").appendTo(logs_table_body);
@@ -94,9 +96,9 @@ $(document).ready(function () {
           .text(capitalizeName(all.user.name))
           .appendTo(col_head);
 
-        for (let i = 0; i < response.length; i++) {
-          if (all.user.name == response[i].user.name) {
-            $("<td>").text(response[i].hours_worked).appendTo(col_head);
+        for (let i = 0; i < report.length; i++) {
+          if (all.user.name == report[i].user.name) {
+            $("<td>").text(report[i].hours_worked).appendTo(col_head);
           }
         }
 
@@ -108,6 +110,7 @@ $(document).ready(function () {
           .appendTo(col_head);
       }
     });
+
     var col_pro_tot = $("<tr>").appendTo(logs_table_body);
     var col_pro_per = $("<tr>").appendTo(logs_table_body);
     $("<th class='table-head-color bg-primary'>")
@@ -117,7 +120,7 @@ $(document).ready(function () {
       .text("Percentage")
       .appendTo(col_pro_per);
 
-    response.forEach((all) => {
+    report.forEach((all) => {
       if (!projects.includes(all.project.name)) {
         projects.push(all.project.name);
 
@@ -130,6 +133,13 @@ $(document).ready(function () {
           .appendTo(col_pro_per);
       }
     });
+    $("<td style='background-color:var(--success);color:white'>")
+      .text(`${parseFloat(summ[0].total_hours).toFixed(2)}`)
+      .appendTo(col_pro_tot);
+    $("<td>").text("").appendTo(col_pro_per);
+    $("<td style='background-color:var(--success);color:white'>")
+      .text(`${parseFloat(summ[0].total_percentage).toFixed(2)}%`)
+      .appendTo(col_pro_per);
 
     $("<th class='table-head-color bg-primary'>")
       .text("Total hours")

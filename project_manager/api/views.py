@@ -754,7 +754,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
             project_users[project_name][username] = 0
             
 
-
+    worked_hours = 0
     activity_logs = ActivityLogs.objects.filter(
         user_id__in=users,
         date__range=[date_start, date_end],
@@ -770,6 +770,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
         user_totals[username] += hours_worked
 
         project_users[project_name][username] += hours_worked
+        worked_hours += hours_worked
 
 
 #TODO: make up your mind about whether to consider the leave a project or execlude the leeave hours
@@ -787,7 +788,7 @@ def prepare_report_pro_user_percentages(users: list[CustomUser], total_hours, da
     # Calculate percentages
     project_percentages = {project_name: ((hours / total_hours) * 100) if total_hours>0 else 0 for project_name, hours in project_totals.items()}
     user_percentages = {username: ((hours / total_hours) * 100) if total_hours>0 else 0 for username, hours in user_totals.items()}
-    return project_users, project_percentages, user_percentages, project_totals, user_totals
+    return project_users, project_percentages, user_percentages, project_totals, user_totals, worked_hours
 
 
 def calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users:list[CustomUser] = None, user:CustomUser = None):
@@ -1458,10 +1459,10 @@ def get_user_pro_user_report(request, pk):
             total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
 
-            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+            project_users, project_percentages, user_percentages, project_totals, user_totals, worked_hours =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
 
-            filtered_data = {"report": []}
+            filtered_data = {"report": [], "all":[]}
 
             # append project and activity to filtered data
             for project_name, users in project_users.items():
@@ -1472,13 +1473,14 @@ def get_user_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
     except Exception as e:
-        messages.error(request, f"Something went wrong: {e}")
-        return JsonResponse({"error": "Invalid request"}, status=405)
+        messages.error(request, f"Something went wrong :( :{e}")
+        return JsonResponse({"error": f"Invalid request: {e}"}, status=405)
 
 
 
@@ -1863,11 +1865,10 @@ def get_manager_pro_user_report(request, pk):
             # getting the hours for all needed elements
             total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+            project_users, project_percentages, user_percentages, project_totals, user_totals, worked_hours =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
 
-
-            filtered_data = {"report": []}
+            filtered_data = {"report": [], "all":[]}
 
             # append project and activity to filtered data
             for project_name, users in project_users.items():
@@ -1878,13 +1879,14 @@ def get_manager_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
     except Exception as e:
-        messages.error(request, f"Something went wrong: {e}")
-        return JsonResponse({"error": "Invalid request"}, status=405)
+        messages.error(request, f"Something went wrong :( :{e}")
+        return JsonResponse({"error": f"Invalid request: {e}"}, status=405)
 
 
 
@@ -2273,10 +2275,10 @@ def get_admin_pro_user_report(request, pk):
             # getting the hours for all needed elements
             total_hours, _, _, _ = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
 
-            project_users, project_percentages, user_percentages, project_totals, user_totals =\
+            project_users, project_percentages, user_percentages, project_totals, user_totals, worked_hours =\
                   prepare_report_pro_user_percentages(users, total_hours, start_date, end_date)
 
-            filtered_data = {"report": []}
+            filtered_data = {"report": [], "all":[]}
 
             # append project and activity to filtered data
             for project_name, users in project_users.items():
@@ -2287,11 +2289,12 @@ def get_admin_pro_user_report(request, pk):
                         "hours_worked": hours_worked
                     }
                     filtered_data["report"].append(project_info)
+            filtered_data["all"].append({"total_hours": worked_hours, "total_percentage":((worked_hours/total_hours)*100)})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
             return JsonResponse({"error": "Invalid request"}, status=405)
     except Exception as e:
-        messages.error(request, f"Something went wrong: {e}")
-        return JsonResponse({"error": f"Invalid request {e}"}, status=405)
+        messages.error(request, f"Something went wrong :( :{e}")
+        return JsonResponse({"error": f"Invalid request: {e}"}, status=405)
 
