@@ -574,8 +574,7 @@ def addleave(request):
     admins = CustomUser.objects.filter(
         Q(role=admin_role.id),
         ~Q(is_superuser=True),
-        location = request.user.location,
-        department = request.user.department,
+        location = request.user.location
     )
 
     managers = CustomUser.objects.filter(
@@ -819,8 +818,7 @@ def update_leave(request, pk):
     admins = CustomUser.objects.filter(
         Q(role=admin_role.id),
         ~Q(is_superuser=True),
-        location = request.user.location,
-        department = request.user.department,
+        location = request.user.location
     )
 
     managers = CustomUser.objects.filter(

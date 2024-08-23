@@ -10,9 +10,9 @@ from django.core.exceptions import ValidationError
 from .tasks import send_signup_email
 from .api.views import getUserSupervisor
 
-import logging
-logging.basicConfig(filename='debug.log' ,level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# import logging
+# logging.basicConfig(filename='debug.log' ,level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 
 def holiday_overlap(date):
@@ -45,7 +45,6 @@ def users(request):
     # if not check_location(request):
     #     logout(request)
     #     return redirect("login")
-    logger.debug('Entered Users..')
     dir = Role.objects.get(name="Director")
     if request.user.is_superuser:
         users = CustomUser.objects.all()
@@ -63,6 +62,7 @@ def users(request):
         _user["profile"] = str(user.profile.profile_img.url)
         _user["username"] = str(user.username).capitalize()
         _user["location"] = str(user.location.loc_name).upper()
+        _user["department"] = str(user.department.dept_name).capitalize()
         _user["first_name"] = str(user.first_name).capitalize()
         _user["last_name"] = str(user.last_name).capitalize()
         _user["email"] = str(user.email)
@@ -520,8 +520,8 @@ def create_holiday(request):
                 form.save()
                 messages.success(request, "Holiday has been added successfully.")
                 return redirect("holidays")
-            except Exception as e:
-                messages.error(request, f"Holiday name must not be numerical. {e}")
+            except Exception:
+                messages.error(request, "Holiday name must not be numerical.")
         else:
             messages.error(request, "Invalid inputs")
     
@@ -849,7 +849,6 @@ def report_admin_pro_user(request, pk):
         redirect('login')
     elif request.user.disabled:
         messages.error(request,"Sorry. You are banned.")
-        
         return redirect("login")
     elif not (request.user.role.name=="Admin" or request.user.role.name=="Director"):
         messages.error(request,

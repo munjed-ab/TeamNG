@@ -461,11 +461,11 @@ def getUserSupervisor(user: CustomUser):
         return ""
     
     # discover the filter conditions based on the user's role
-    filter_conditions = Q(location=user.location, department=user.department)
+    filter_conditions = Q(location=user.location)
     if user.role.name=="Manager":
         filter_conditions &= Q(role=get_admin_role())
     elif user.role.name=="Employee":
-        filter_conditions &= Q(role=get_manager_role())
+        filter_conditions &= Q(role=get_manager_role(), department=user.department)
 
     
     # query deez database to find the supervisor
