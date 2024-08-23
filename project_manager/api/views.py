@@ -461,7 +461,7 @@ def getUserSupervisor(user: CustomUser):
         return ""
     
     # discover the filter conditions based on the user's role
-    filter_conditions = Q(location=user.location)
+    filter_conditions = Q(location=user.location, is_superuser=False)
     if user.role.name=="Manager":
         filter_conditions &= Q(role=get_admin_role())
     elif user.role.name=="Employee":
