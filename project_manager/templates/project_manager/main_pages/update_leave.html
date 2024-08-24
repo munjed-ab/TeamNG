@@ -32,7 +32,7 @@
 
 <div class="container-fluid">
   <div class="container-update-leave mt-5">
-    <h2>Update Leave</h2>
+    <h2>Update Absence</h2>
     <form id="addleave" action="" method="POST">
       {% csrf_token %} {% if request.user.role.name == "Admin" %}
       <br />
@@ -89,7 +89,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Leave Type:</label>
+        <label class="form-label">Absence Type:</label>
         <div class="row">
           <div class="col">
             <div class="form-check">

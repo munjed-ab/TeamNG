@@ -156,7 +156,7 @@ $(document).ready(function () {
         month = "_";
       }
 
-      XLSX.writeFile(wb, `leaves_report_in_${year}_${month}.xlsx`);
+      XLSX.writeFile(wb, `Absences_report_in_${year}_${month}.xlsx`);
     });
   handleFilterChange(); // Initial call to load data
 });

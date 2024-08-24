@@ -31,7 +31,7 @@ async function updateCalendar(calendar, start, end) {
       let eventTitle = hoursWorked + "h";
       if (leaveData[date]) {
         calendar.addEvent({
-          title: "leave",
+          title: "Absence",
           start: date,
           backgroundColor: "rgb(49, 97, 120)",
           textColor: "white",
@@ -89,7 +89,7 @@ async function fetchLeaveData(dates) {
 
     return response;
   } catch (error) {
-    console.error("Error fetching leave data:", error);
+    console.error("Error fetching Absence data:", error);
     return {};
   }
 }
@@ -190,7 +190,7 @@ function checkWeekDays(info) {
 
   // Check if it's Sunday
   if (dayOfWeek === 0) {
-    if (event.title != "leave") {
+    if (event.title != "Absence") {
       event.remove();
     }
     return;
@@ -212,7 +212,7 @@ function checkWeekDays(info) {
     const lastSaturday = saturdays[saturdays.length - 1];
 
     if (dayOfMonth === secondSaturday || dayOfMonth === lastSaturday) {
-      if (event.title != "leave") {
+      if (event.title != "Absence") {
         event.remove();
       }
     }

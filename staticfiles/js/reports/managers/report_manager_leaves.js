@@ -165,7 +165,7 @@ $(document).ready(function () {
         user = $("#user-filter option:selected").text();
       }
 
-      XLSX.writeFile(wb, `leaves_report_in_${year}_${month}_of_${user}.xlsx`);
+      XLSX.writeFile(wb, `Absences_report_in_${year}_${month}_of_${user}.xlsx`);
     });
   handleFilterChange(); // Initial call to load data
 });

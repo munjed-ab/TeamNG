@@ -12,7 +12,7 @@
 </style>
 <div class="container">
   {% if leave_requests %}
-  <h2>Leave Requests</h2>
+  <h2>Absence Requests</h2>
   <div class="table-responsive">
     <table class="table table-striped">
       <thead class="table-head-color">
@@ -21,7 +21,7 @@
           <th>Name</th>
           <th>Start Date</th>
           <th>End Date</th>
-          <th>Leave Type</th>
+          <th>Absence Type</th>
           <th>Days</th>
           <th>Time Since</th>
           <th>Action</th>
@@ -74,7 +74,7 @@
     </table>
   </div>
   {% endif %} {% if leave_response_rejected %}
-  <h2>Rejected Leaves</h2>
+  <h2>Rejected Absences</h2>
   <div class="table-responsive">
     <table class="table table-striped">
       <tbody>
@@ -101,7 +101,7 @@
     </table>
   </div>
   {% endif %} {% if leave_response_approved %}
-  <h2>Approved Leaves</h2>
+  <h2>Approved Absences</h2>
   <div class="table-responsive">
     <table class="table table-striped">
       <tbody>
@@ -145,7 +145,7 @@
         <!-- Modal header -->
         <div class="modal-header">
           <h5 class="modal-title" id="responseModalLabel">
-            Respond to Leave Request
+            Respond to Absence Request
           </h5>
           <button
             type="button"

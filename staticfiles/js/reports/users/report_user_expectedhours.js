@@ -114,7 +114,7 @@ $(document).ready(function () {
     var row5 = $("<tr>")
       .appendTo(logs_table_body)
       .css({ "background-color": "var(--dark)", color: "white" });
-    $("<td>").text("Leave Days Hours").appendTo(row5);
+    $("<td>").text("Absence Days Hours").appendTo(row5);
     $("<td>")
       .text(parseFloat(response.all.hours_leave_days).toFixed(2))
       .appendTo(row5);

@@ -397,7 +397,7 @@ def prepare_response_data(project_data:dict, activity_type_data:dict, total_hour
         filtered_data["projects"].append(project_info)
 
     filtered_data["projects"].append({
-        "name": "Leaves",
+        "name": "Absences",
         "total": hours_leave_days,
         "percentage": hours_leave_days * 100 / total_hours_wleave if total_hours_wleave > 0 else 0
     })
@@ -1190,12 +1190,7 @@ def overview_user_data(request, pk):
             # getting the number of working saturdays since the number of daily hours in sat is 3 always
             working_saturdays = get_working_saturdays(start_date.ctime(), end_date.ctime(), users)
             # getting the hours for all needed elements
-            print("working_saturdays: ", working_saturdays)
             total_hours, total_hours_wleave, hours_leave_days, hours_pub_holiday = calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, working_saturdays, users)
-            print("total hours: ", total_hours)
-            print("total hours with leave: ", total_hours_wleave)
-            print("public holiday: ", hours_pub_holiday)
-            print("public hours: ", hours_pub_holiday)
             project_data, activity_type_data, total_worked_hours = calculate_project_and_activity_data(users, project_id, start_date, end_date)
             missed_hours = total_hours - total_worked_hours
             filtered_data = prepare_response_data(project_data, activity_type_data, total_hours_wleave, total_hours, total_worked_hours, missed_hours, hours_leave_days, hours_pub_holiday)
@@ -1372,7 +1367,7 @@ def get_user_overview_report(request, pk):
                 filtered_data["projects"].append(project_info)
 
             filtered_data["projects"].append({
-                "name": "Leaves",
+                "name": "Absences",
                 "total": hours_leave_days,
                 "percentage": hours_leave_days_percentage
             })
@@ -1687,7 +1682,7 @@ def get_manager_overview_report(request, pk):
                 filtered_data["projects"].append(project_info)
 
             filtered_data["projects"].append({
-                "name": "Leaves",
+                "name": "Absences",
                 "total": hours_leave_days,
                 "percentage": hours_leave_days_percentage
             })
@@ -2078,7 +2073,7 @@ def get_admin_overview_report(request, pk):
                 filtered_data["projects"].append(project_info)
 
             filtered_data["projects"].append({
-                "name": "Leaves",
+                "name": "Absences",
                 "total": hours_leave_days,
                 "percentage": hours_leave_days_percentage
             })

@@ -629,7 +629,7 @@ def addleave(request):
                     leave_type = leave_type,
                     is_approved = True
                 )
-                send_notification_email_recieve_admin.delay(request.user.email, "leave request", "approved")
+                send_notification_email_recieve_admin.delay(request.user.email, "Absence request", "approved")
             elif request.user.role.name == "Manager":
                 admin_name = request.POST.get("adminName")
                 admin = CustomUser.objects.get(username = admin_name)
@@ -643,7 +643,7 @@ def addleave(request):
                     total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
-                send_notification_email_recieve_manager.delay(admin.email, "leave request", request.user.username)
+                send_notification_email_recieve_manager.delay(admin.email, "Absence request", request.user.username)
 
             else:
                 manager_name = request.POST.get("managerName")
@@ -658,7 +658,7 @@ def addleave(request):
                     total_leave_days = total_leave_days,
                     leave_type = leave_type
                 )
-                send_notification_email_recieve_manager.delay(manager.email, "leave request", request.user.username)
+                send_notification_email_recieve_manager.delay(manager.email, "Absence request", request.user.username)
             messages.success(request,
             "Request has been sent successfully.")
 
@@ -850,7 +850,7 @@ def update_leave(request, pk):
             return redirect('leave_logs')
         if leave_overlap(request.user, start_date, end_date):
             messages.error(request,
-            "Canceled. You already have a leave on these days.")
+            "Canceled. You already have an Absence on these days.")
             return redirect('addleave')
         try:
             with transaction.atomic():

@@ -191,7 +191,7 @@ $(document).ready(function () {
       }
       XLSX.writeFile(
         wb,
-        `leaves_report_in_${year}_${month}_of_${user}_${dept}.xlsx`
+        `Absences_report_in_${year}_${month}_of_${user}_${dept}.xlsx`
       );
     });
   handleFilterChange();
