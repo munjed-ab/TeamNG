@@ -111,14 +111,15 @@ body {
   color: #e74a3b;
   font-weight: bold;
   text-decoration: none;
-
   font-size: 1.6rem;
   display: grid;
   place-items: center;
-  min-height: 200px;
-  border: 8px solid;
-  padding: 1rem;
-  border-image: linear-gradient(to left, var(--danger), var(--warning)) 1 0;
+  min-height: 100px;
+  line-height: 1.5em;
+  padding: 1em;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  background: hsla(67, 95%, 95%, 1);
+  border: solid 5px #e74a3b;
 }
 
 .wrapper-filter {
