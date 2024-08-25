@@ -87,13 +87,6 @@
         </div>
       </div>
     </div>
-    {% else %}
-    <h1 class="text-center mb-3 no-edit-warning">
-      Entering data for future dates is not permitted.
-    </h1>
-    {% endif %} {% else %}
-    <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
-    {% endif %}
     <div class="col-lg-7 col-xl-7 col-md-12 col-sm-12 col-xs-12">
       <!-- Activity Logs Section -->
 
@@ -102,7 +95,7 @@
         <h2 class="float-left mb-3">Activity Logs</h2>
         <br />
         <h2 id="total-hours" class="float-right">{{ total|floatformat }}h</h2>
-        <table class="table table-striped custom-table">
+        <table class="table table-striped">
           <!-- Added custom class -->
           <thead class="table-head-color">
             <tr>
@@ -141,6 +134,64 @@
         </button>
       </div>
     </div>
+    {% else %}
+    <div class="no-edit-warning">
+      <h1 class="text-center mb-3">
+        Entering data for future dates or previous months is not permitted.
+      </h1>
+    </div>
+    <div class="col-lg-12 col-xl-12 col-md-12 col-sm-12 col-xs-12">
+      <!-- Activity Logs Section -->
+
+      <!-- Adjusted column width -->
+      <div class="table-responsive">
+        <h2 class="float-left mb-3">Activity Logs</h2>
+        <br />
+        <h2 id="total-hours" class="float-right">{{ total|floatformat }}h</h2>
+        <table class="table table-striped">
+          <!-- Added custom class -->
+          <thead class="table-head-color">
+            <tr>
+              <th>Project</th>
+              <th>Activity Type</th>
+              <th>Hours</th>
+              <th>Date</th>
+              <th>Details</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody class="existing-entries">
+            <!-- Existing entries will be displayed here -->
+            {% for entry in entry_logs %}
+            <tr>
+              <td>{{entry.project}}</td>
+              <td>{{entry.activity}}</td>
+              <td>{{entry.hours_worked|floatformat}}h</td>
+              <td>{{entry.date|date:"d-M-Y"}}</td>
+              <td>{{entry.details}}</td>
+              <td></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <!-- New entries will be added here dynamically -->
+          <tbody class="new-entries"></tbody>
+        </table>
+      </div>
+      <div class="text-center mt-3">
+        <button
+          id="save-button"
+          class="btn btn-primary"
+          style="background-color: var(--primary)"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+    {% endif %} {% else %}
+    <div class="no-edit-warning">
+      <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
+    </div>
+    {% endif %}
   </div>
 </div>
 

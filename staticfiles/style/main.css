@@ -108,13 +108,17 @@ body {
 .no-edit-warning {
   width: 80%;
   margin: auto;
-  border: 0;
-  color: rgb(173, 46, 42);
-  background-color: var(--primary);
-  padding: 15px;
+  color: #e74a3b;
   font-weight: bold;
   text-decoration: none;
-  border-radius: 10px;
+
+  font-size: 1.6rem;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  border: 8px solid;
+  padding: 1rem;
+  border-image: linear-gradient(to left, var(--danger), var(--warning)) 1 0;
 }
 
 .wrapper-filter {
