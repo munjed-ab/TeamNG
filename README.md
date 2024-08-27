@@ -31,7 +31,7 @@ This Employee Management System is a web application designed for a company to m
 
 **SheetJS:** A JavaScript library for reading and writing data from spreadsheets.
 
-## License
+## Credits
 
 Redis: [RSALV2](https://redis.io/legal/rsalv2-agreement/) License
 
