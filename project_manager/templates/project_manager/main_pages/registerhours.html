@@ -6,10 +6,42 @@
     width: 100%;
     border: 5px inset;
   }
+  .date-navigate {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .navigate {
+    border-radius: 30px;
+    color: white;
+    background: var(--primary);
+    margin: 10px;
+  }
 </style>
 
 <div class="container mt-5">
-  <h1 class="text-center mb-3">{{ date }}</h1>
+  <!--PUSH DEEZ and don't forget styles-->
+  <div class="date-navigate">
+    <form
+      id="yesterday"
+      method="GET"
+      action="{% url 'registerhours' yesterday %}"
+    >
+      <input class="navigate" type="submit" placeholder="" value="⇐" />
+    </form>
+    <h1 class="text-center mb-3">{{ date }}</h1>
+
+    <form
+      id="tomorrow"
+      method="GET"
+      action="{% url 'registerhours' tomorrow %}"
+    >
+      <input class="navigate" type="submit" placeholder="" value="⇒" />
+    </form>
+  </div>
+  <!--END DEEZ-->
+
   <br />
   {% if not is_holiday %} {% if can_edit %}
   <div class="row">
@@ -189,7 +221,9 @@
     </div>
     {% endif %} {% else %}
     <div class="">
-      <h1 class="text-center mb-3 no-edit-warning">It's a Holiday, Chill</h1>
+      <h1 class="text-center mb-3 no-edit-warning">
+        Entering data for holidays is not permitted.
+      </h1>
     </div>
     {% endif %}
   </div>

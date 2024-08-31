@@ -242,6 +242,8 @@ def get_filtered_dates(start_date:str, end_date:str, with_holidays:bool=True, ex
 
 
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
     if request.method == 'POST':
         form = AuthenticationForm(request, request.POST)
         if form.is_valid():
@@ -323,6 +325,11 @@ def registerhours(request, date_picked):
     #     return redirect("login")
 
     q = date_picked
+    
+    today = datetime.strptime(str(q), r"%Y-%m-%d").date()
+    yesterday = (today - timedelta(days=1)).strftime(r"%Y-%m-%d")
+    tomorrow = (today + timedelta(days=1)).strftime(r"%Y-%m-%d")
+
     can_edit = False
     is_holiday = False
     try:
@@ -333,13 +340,6 @@ def registerhours(request, date_picked):
             f"You have choosed a leave date {q}.")
             return redirect("dashboard")
         ##############
-
-        # is to check if the date is (sundays or 2nd, 4th of saterday)
-        if check_is_sun_sat(q):
-            messages.error(request,
-            f"You have choosed a holiday date {q}.")
-            return redirect("dashboard")
-
         # is to check whether the date are ok to edit if include:
         # - current month -> ok
         # - past month and today is earlier than 11th -> ok
@@ -356,6 +356,13 @@ def registerhours(request, date_picked):
         else:
             can_edit = False
         ###############
+
+        ##############
+        # is to check if the date is (sundays or 2nd, 4th of saterday)
+        if check_is_sun_sat(q):
+            can_edit = False
+            is_holiday = True
+
 
         # is to check if the date are actually a holiday date
         ###############
@@ -392,7 +399,9 @@ def registerhours(request, date_picked):
         "entry_logs":entry_logs,
         "total":total,
         "can_edit":can_edit,
-        "is_holiday":is_holiday
+        "is_holiday":is_holiday,
+        "yesterday":yesterday,
+        "tomorrow":tomorrow
             }
     return render(request, 'project_manager/main_pages/registerhours.html', context)
 
