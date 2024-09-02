@@ -831,17 +831,16 @@ def calc_total_hours_for_all_sections(start_date, end_date, daily_hours_total, w
     # getting the list of filtered days without weekly holidays and public holidays
     total_days_list = get_filtered_dates(start_date, end_date)
     total_days = len(total_days_list)
+
     # getting the number of hours and days of leaves for all users
     if user and not users:
         hours_leave_days, leave_days = calculate_leave_days_user(user, start_date, end_date, with_days=True)
     else:
         hours_leave_days, leave_days = calculate_leave_days(users, start_date, end_date, with_days=True)
-        total_days = len(total_days_list) * users.count()
-
-    # calculating the total number of expected working days (we will add the working saturdays later for 3 hours)    
-    total_days -= (leave_days + working_saturdays)
+    # calculating the total number of expected working days (we will add the working saturdays later for 3 hours)
+    total_days -= working_saturdays
     # first we calculate the total hours by multiplying the previous daily hours with the total days above
-    total_hours = daily_hours_total * total_days
+    total_hours = (daily_hours_total * total_days) - hours_leave_days
     # total hours with leave this is for calculating the percentage of leave project from the expected total hours
     # and since we subtract the leave days before from the total hours we add the leave hours here
     total_hours_wleave = total_hours + hours_leave_days
