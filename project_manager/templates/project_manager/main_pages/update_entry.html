@@ -190,7 +190,7 @@
 </script>
 <script>
   var details = document.getElementById("details");
-  details.value = "{{old_entry.details}}";
+  details.value = "{{old_unescaped_details}}";
   // Function to validate the date input field
   function validateDate() {
     var datePicker = document.getElementById("datepicker");

@@ -18,6 +18,7 @@ from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
 import copy
+import html
 
 
 
@@ -452,6 +453,7 @@ def update_entry(request, pk):
     projects = Project.objects.all()
     activities = Activity.objects.all()
     old_entry = ActivityLogs.objects.get(id=pk)
+    old_unescaped_details = html.unescape(old_entry.details)
     first_day_last_month, last_day_current_month = get_firstday_current_last_month()
 
     holidays = Holiday.objects.filter(
@@ -521,7 +523,8 @@ def update_entry(request, pk):
                 return redirect("activitylogs")
 
             # Finally updating the data
-            old_entry.details = details
+            if html.unescape(old_entry.details) != html.unescape(details):
+                old_entry.details = details
             old_entry.date = date_picked
             old_entry.activity = activity
             old_entry.project = project
@@ -537,12 +540,12 @@ def update_entry(request, pk):
         return redirect("activitylogs")
 
     context = {"old_entry": old_entry,
+               "old_unescaped_details":old_unescaped_details,
                 "projects": projects,
                 "activities": activities,
                 "holidays":holidays
             }
     return render(request, "project_manager/main_pages/update_entry.html", context)
-
 
 def delete_entry(request, pk):
     if not request.user.is_authenticated:

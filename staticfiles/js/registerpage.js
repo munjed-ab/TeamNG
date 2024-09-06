@@ -6,6 +6,15 @@ function isTableEmpty() {
   }
 }
 
+function escapeHtml(text) {
+  var map = {
+    "<": "&lt;",
+    ">": "&gt;",
+  };
+  return text.replace(/[<>]/g, function (m) {
+    return map[m];
+  });
+}
 isTableEmpty();
 
 var details = document.getElementById("details");
@@ -31,7 +40,7 @@ $(document).ready(function () {
       return;
     }
     var date = JSON.parse(document.getElementById("date").textContent);
-    var details = $("#details").val();
+    var details = escapeHtml($("#details").val());
     var hours = $("#quantity").val();
     var countdigits = hours.length;
     if (
