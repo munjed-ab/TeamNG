@@ -338,7 +338,7 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
         project_data[project_name]['activity_logs'].append({
             'date': activity_log.date.strftime(r'%d-%b-%Y'),
             'hours_worked': activity_log.hours_worked,
-            'details': activity_log.details,
+            'details': str(activity_log.details),
             'activity': activity_type_name,
             'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
             'user': fullname
@@ -348,7 +348,7 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
         activity_type_data[activity_type_name]['activity_logs'].append({
             'date': activity_log.date.strftime(r'%d-%b-%Y'),
             'hours_worked': activity_log.hours_worked,
-            'details': activity_log.details,
+            'details': str(activity_log.details),
             'project': project_name,
             'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
             'user': fullname
