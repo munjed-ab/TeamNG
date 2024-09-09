@@ -194,28 +194,24 @@ $(document).ready(function () {
 
     // Create table body
     var tableBody = $("<tbody>").appendTo(table);
-    if (activityLogs === undefined) {
-      if (activityLogs.length > 0) {
-        // Populate table with activity logs
-        activityLogs.forEach(function (log) {
-          var row = $("<tr>").appendTo(tableBody);
-          $("<td>").text(log.time_added).appendTo(row);
-          $("<td>").text(log.user).appendTo(row);
 
-          $("<td>")
-            .text(log.project ? log.project : log.activity)
-            .appendTo(row);
-          $("<td>").text(log.date).appendTo(row);
-          $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
-          $("<td>").text(log.details).appendTo(row);
-        });
-      } else {
+    if (activityLogs.length > 0) {
+      // Populate table with activity logs
+      activityLogs.forEach(function (log) {
         var row = $("<tr>").appendTo(tableBody);
-        $("<td>").text("No Data").appendTo(row);
-      }
+        $("<td>").text(log.time_added).appendTo(row);
+        $("<td>").text(log.user).appendTo(row);
+
+        $("<td>")
+          .text(log.project ? log.project : log.activity)
+          .appendTo(row);
+        $("<td>").text(log.date).appendTo(row);
+        $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
+        $("<td>").text(log.details).appendTo(row);
+      });
     } else {
       var row = $("<tr>").appendTo(tableBody);
-      $("<td>").text("Too Much Data to View Here").appendTo(row);
+      $("<td>").text("No Data").appendTo(row);
     }
     // Append table to modal body
     modalBody.append(table);
