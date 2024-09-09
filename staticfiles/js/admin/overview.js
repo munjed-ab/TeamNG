@@ -421,19 +421,23 @@ $(document).ready(function () {
     var tableBody = $("<tbody>").appendTo(table);
 
     // Populate table with activity logs
-    activityLogs.forEach(function (log) {
+    if (activityLogs.length > 0) {
+      activityLogs.forEach(function (log) {
+        var row = $("<tr>").appendTo(tableBody);
+        $("<td>").text(log.time_added).appendTo(row);
+        $("<td>").text(log.user).appendTo(row);
+
+        $("<td>")
+          .text(log.project ? log.project : log.activity)
+          .appendTo(row);
+        $("<td>").text(log.date).appendTo(row);
+        $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
+        $("<td>").text(log.details).appendTo(row);
+      });
+    } else {
       var row = $("<tr>").appendTo(tableBody);
-      $("<td>").text(log.time_added).appendTo(row);
-      $("<td>").text(log.user).appendTo(row);
-
-      $("<td>")
-        .text(log.project ? log.project : log.activity)
-        .appendTo(row);
-      $("<td>").text(log.date).appendTo(row);
-      $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
-      $("<td>").text(log.details).appendTo(row);
-    });
-
+      $("<td>").text("No Data").appendTo(row);
+    }
     // Append table to modal body
     modalBody.append(table);
 
