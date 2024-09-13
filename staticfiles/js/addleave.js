@@ -10,8 +10,13 @@ flatpickr("#startDate", {
   onChange: function (selectedDates, dateStr, instance) {
     const endDatePicker = document.getElementById("endDate")._flatpickr;
     if (endDatePicker) {
-      // Update minDate of endDatePicker to be the next day of startDate
-      endDatePicker.set("minDate", new Date(selectedDates[0]).fp_incr(1));
+      // Allow same date selection, but ensure endDate is not before startDate
+      endDatePicker.set("minDate", dateStr);
+
+      // If endDate is now invalid, update it to match startDate
+      if (endDatePicker.selectedDates[0] < selectedDates[0]) {
+        endDatePicker.setDate(dateStr);
+      }
     }
   },
 });
@@ -28,8 +33,13 @@ flatpickr("#endDate", {
   onChange: function (selectedDates, dateStr, instance) {
     const startDatePicker = document.getElementById("startDate")._flatpickr;
     if (startDatePicker) {
-      // Update maxDate of startDatePicker to be the previous day of endDate
-      startDatePicker.set("maxDate", new Date(selectedDates[0]).fp_incr(-1));
+      // Allow same date selection, but ensure startDate is not after endDate
+      startDatePicker.set("maxDate", dateStr);
+
+      // If startDate is now invalid, update it to match endDate
+      if (startDatePicker.selectedDates[0] > selectedDates[0]) {
+        startDatePicker.setDate(dateStr);
+      }
     }
   },
 });
