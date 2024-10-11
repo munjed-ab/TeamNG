@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth.models import BaseUserManager
 from django.core.files.storage import FileSystemStorage
-import os
-from django.conf import settings
 
 image_storage = FileSystemStorage(location='/var/www/http/media')
 
@@ -168,6 +166,9 @@ class ActivityLogs(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     details = models.TextField(blank=True)
+
+    def __str__(self):
+        return f'{self.user.username} on {self.date.strftime(r'%Y-%m-%d')}: {self.hours_worked} h'
 
     class Meta:
         ordering = ["-updated", "-created"]
