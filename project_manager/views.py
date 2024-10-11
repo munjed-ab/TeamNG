@@ -73,7 +73,7 @@ def isLeaveDay(user, date):
     leave_days = Leave.objects.filter(
         from_user=user,
         start_date__range=[first_day_last_month, last_day_current_month],
-        is_approved = True
+        is_rejected = False
     )
     # need improvement
     datetime_object = datetime.strptime(date, r"%Y-%m-%d")
