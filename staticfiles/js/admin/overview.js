@@ -450,7 +450,7 @@ $(document).ready(function () {
       downloadExcel(activityLogs, name);
     });
 
-    $("#activityLogsModal").modal("show");
+    // $("#activityLogsModal").modal("show");
   }
 
   // Attach event listeners
