@@ -87,13 +87,7 @@ $(document).ready(function () {
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>")
-        .text(
-          new Date(
-            new Date(log.time_added).getTime() - clientTimezoneOffset
-          ).toLocaleString()
-        )
-        .appendTo(row);
+      $("<td>").text(log.time_added).appendTo(row);
       $("<td>").text(log.username).appendTo(row);
       $("<td>").text(log.project).appendTo(row);
 

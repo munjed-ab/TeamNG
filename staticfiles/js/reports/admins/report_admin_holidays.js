@@ -1,3 +1,4 @@
+const clientTimezoneOffset = new Date().getTimezoneOffset() * 60000;
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
 
@@ -73,7 +74,13 @@ $(document).ready(function () {
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
       $("<td>").text(log.name).appendTo(row);
-      $("<td>").text(log.date).appendTo(row);
+      $("<td>")
+        .text(
+          new Date(
+            new Date(log.date + "T00:00:00Z").getTime() - clientTimezoneOffset
+          ).toDateString()
+        )
+        .appendTo(row);
     });
   }
 
@@ -98,6 +105,11 @@ $(document).ready(function () {
       const totalRows = range.e.r - range.s.r + 1;
       for (let index = 2; index < totalRows + 2; index++) {
         if (ws[`B${index}`]) {
+          const originalDate = new Date(ws[`B${index}`].v);
+          const utcDate = new Date(
+            originalDate.getTime() - clientTimezoneOffset
+          );
+          ws[`B${index}`].v = utcDate.toISOString().slice(0, 10);
           ws[`B${index}`].z = "d-mmm-yyyy";
           ws[`B${index}`].t = "d";
         }

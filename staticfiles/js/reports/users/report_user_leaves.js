@@ -1,4 +1,5 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
+const clientTimezoneOffset = new Date().getTimezoneOffset() * 60000;
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
 
@@ -78,9 +79,22 @@ $(document).ready(function () {
       $("<td>").text(log.to).appendTo(row);
       $("<td>").text(log.department).appendTo(row);
       $("<td>").text(log.location).appendTo(row);
-      $("<td>").text(log.start_date).appendTo(row);
-
-      $("<td>").text(log.end_date).appendTo(row);
+      $("<td>")
+        .text(
+          new Date(
+            new Date(log.start_date + "T00:00:00Z").getTime() -
+              clientTimezoneOffset
+          ).toDateString()
+        )
+        .appendTo(row);
+      $("<td>")
+        .text(
+          new Date(
+            new Date(log.end_date + "T00:00:00Z").getTime() -
+              clientTimezoneOffset
+          ).toDateString()
+        )
+        .appendTo(row);
       $("<td>").text(log.total_leave_days).appendTo(row);
       $("<td>").text(log.weekends_count).appendTo(row);
       $("<td>").text(log.pub_holidays_count).appendTo(row);
@@ -112,10 +126,20 @@ $(document).ready(function () {
       const totalRows = range.e.r - range.s.r + 1;
       for (let index = 2; index < totalRows + 2; index++) {
         if (ws[`E${index}`]) {
+          const originalDate = new Date(ws[`E${index}`].v);
+          const utcDate = new Date(
+            originalDate.getTime() - clientTimezoneOffset
+          );
+          ws[`E${index}`].v = utcDate.toISOString().slice(0, 10);
           ws[`E${index}`].z = "d-mmm-yyyy";
           ws[`E${index}`].t = "d";
         }
         if (ws[`F${index}`]) {
+          const originalDate = new Date(ws[`F${index}`].v);
+          const utcDate = new Date(
+            originalDate.getTime() - clientTimezoneOffset
+          );
+          ws[`F${index}`].v = utcDate.toISOString().slice(0, 10);
           ws[`F${index}`].z = "d-mmm-yyyy";
           ws[`F${index}`].t = "d";
         }
