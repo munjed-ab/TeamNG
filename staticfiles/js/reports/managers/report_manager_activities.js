@@ -1,5 +1,8 @@
 const user_id = JSON.parse(document.getElementById("user_id").textContent);
 
+// Get the client's timezone offset in minutes
+const clientTimezoneOffset = new Date().getTimezoneOffset() * 60000;
+
 const currentDate = new Date();
 const currentMonth = currentDate.getMonth() + 1; // Months are zero-indexed
 
@@ -29,7 +32,6 @@ function getCookie(name) {
     var cookies = document.cookie.split(";");
     for (var i = 0; i < cookies.length; i++) {
       var cookie = cookies[i].trim();
-      // Does this cookie string begin with the name we want?
       if (cookie.substring(0, name.length + 1) === name + "=") {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
@@ -77,14 +79,26 @@ $(document).ready(function () {
     // Populate table with activity logs
     response.forEach(function (log) {
       var row = $("<tr>").appendTo(logs_table_body);
-      $("<td>").text(log.time_added).appendTo(row);
+      $("<td>")
+        .text(
+          new Date(
+            new Date(log.time_added).getTime() - clientTimezoneOffset
+          ).toLocaleString()
+        )
+        .appendTo(row);
       $("<td>").text(log.username).appendTo(row);
       $("<td>").text(log.project).appendTo(row);
 
       $("<td>").text(log.activity).appendTo(row);
       $("<td>").text(log.department).appendTo(row);
       $("<td>").text(log.location).appendTo(row);
-      $("<td>").text(new Date(log.date).toDateString()).appendTo(row);
+      $("<td>")
+        .text(
+          new Date(
+            new Date(log.date + "T00:00:00Z").getTime() - clientTimezoneOffset
+          ).toDateString()
+        )
+        .appendTo(row);
       $("<td>").text(parseFloat(log.hours_worked).toFixed(2)).appendTo(row);
       $("<td>").text(log.details).appendTo(row);
     });
@@ -95,23 +109,20 @@ $(document).ready(function () {
       handleFilterChange();
     }
   );
+
   document
     .getElementById("downloadExcelBtn")
     .addEventListener("click", function () {
-      /* Create worksheet from HTML DOM TABLE */
       var wb = XLSX.utils.table_to_book(
         document.getElementById("TableToExport")
       );
 
-      // Process Data (add a new row)
       var ws = wb.Sheets["Sheet1"];
       XLSX.utils.sheet_add_aoa(ws, [["Created " + new Date().toISOString()]], {
         origin: -1,
       });
 
       const range = XLSX.utils.decode_range(ws["!ref"]);
-
-      // Calculate the number of rows
       const totalRows = range.e.r - range.s.r + 1;
       for (let index = 2; index < totalRows + 2; index++) {
         if (ws[`H${index}`]) {
@@ -119,11 +130,21 @@ $(document).ready(function () {
           ws[`H${index}`].t = "n";
         }
         if (ws[`G${index}`]) {
+          const originalDate = new Date(ws[`G${index}`].v);
+          const utcDate = new Date(
+            originalDate.getTime() - clientTimezoneOffset
+          );
+          ws[`G${index}`].v = utcDate.toISOString().slice(0, 10);
           ws[`G${index}`].z = "d-mmm-yyyy";
           ws[`G${index}`].t = "d";
         }
         if (ws[`A${index}`] && !isNaN(ws[`A${index}`])) {
-          ws[`A${index}`].z = "d-mmm-yyyy [hh:mm:ss]";
+          const originalDate = new Date(ws[`A${index}`].v);
+          const utcDate = new Date(
+            originalDate.getTime() - clientTimezoneOffset
+          );
+          ws[`A${index}`].v = utcDate.toISOString().slice(0, 10);
+          ws[`A${index}`].z = "d-mmm-yyyy";
           ws[`A${index}`].t = "d";
         }
       }
@@ -137,15 +158,10 @@ $(document).ready(function () {
         { wpx: 80 },
         { wpx: 80 },
         { wpx: 80 },
-        { wpx: 80 },
-        { wpx: 80 },
       ];
       ws["!rows"] = [{ hpx: 30 }];
       var month = $("#month-filter").val();
       var year = $("#year-filter").val();
-      if (month == "all") {
-        month = "_";
-      }
       var user = $("#user-filter").val();
       var pro = $("#project-filter").val();
 
@@ -164,5 +180,5 @@ $(document).ready(function () {
         `activities_report_in_${year}_${month}_of_${user}_${pro}.xlsx`
       );
     });
-  handleFilterChange(); // Initial call to load data
+  handleFilterChange();
 });
