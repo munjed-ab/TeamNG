@@ -290,21 +290,21 @@ def calculate_project_and_activity_data(users, project_id, date_start, date_end)
         
         project_data[project_name]['total'] += activity_log.hours_worked
         project_data[project_name]['activity_logs'].append({
-            'date': activity_log.date.strftime(r'%d-%b-%Y'),
+            'date': activity_log.date.strftime(r'%Y-%m-%d'),
             'hours_worked': activity_log.hours_worked,
             'details': str(activity_log.details),
             'activity': activity_type_name,
-            'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
+            'time_added': activity_log.updated.strftime(r'%Y-%m-%d [%H:%M:%S]'),
             'user': fullname
         })
         
         activity_type_data[activity_type_name]['total'] += activity_log.hours_worked
         activity_type_data[activity_type_name]['activity_logs'].append({
-            'date': activity_log.date.strftime(r'%d-%b-%Y'),
+            'date': activity_log.date.strftime(r'%Y-%m-%d'),
             'hours_worked': activity_log.hours_worked,
             'details': str(activity_log.details),
             'project': project_name,
-            'time_added': activity_log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
+            'time_added': activity_log.updated.strftime(r'%Y-%m-%d [%H:%M:%S]'),
             'user': fullname
         })
         total_worked_hours += activity_log.hours_worked
@@ -463,13 +463,13 @@ def prepare_report_activity_logs(users, project_id, start_date, end_date):
     for log in activity_logs:
         project_name = log.project.project_name
         logs["activity_logs"].append({
-            'time_added': log.updated.strftime(r'%d-%b-%Y [%H:%M:%S]'),
+            'time_added': log.updated.strftime(r'%Y-%m-%d [%H:%M:%S]'),
             'username': log.user.first_name.capitalize() + " " + log.user.last_name.capitalize(),
             'project': project_name,
             'activity': log.activity.activity_name,
             'department': log.user.department.dept_name,
             'location':str(log.user.location.loc_name).upper(),
-            'date': log.date.strftime(r'%d-%b-%Y'),
+            'date': log.date.strftime(r'%Y-%m-%d'),
             "hours_worked": Decimal(log.hours_worked),
             "details": log.details,
         })
@@ -566,8 +566,8 @@ def prepare_report_leaves(users, start_date, end_date):
             "to": log.to_user.first_name.capitalize() + " " + log.to_user.last_name.capitalize() if log.to_user else "__",
             "department": str(log.from_user.department.dept_name).capitalize(),
             "location": str(log.from_user.location.loc_name).upper(),
-            "start_date": log.start_date.strftime(r"%d-%b-%Y"),
-            "end_date": log.end_date.strftime(r"%d-%b-%Y"),
+            "start_date": log.start_date.strftime(r"%Y-%m-%d"),
+            "end_date": log.end_date.strftime(r"%Y-%m-%d"),
             "total_leave_days":log.total_leave_days,
             "actual_leave_days":len(filtered_dates),
             "weekends_count": weekends_count,
@@ -1298,7 +1298,7 @@ def get_user_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
+                "date_range":{"start":start_date.strftime(r"%Y-%m-%d"), "end":end_date.strftime(r"%Y-%m-%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -1613,7 +1613,7 @@ def get_manager_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
+                "date_range":{"start":start_date.strftime(r"%Y-%m-%d"), "end":end_date.strftime(r"%Y-%m-%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -2004,7 +2004,7 @@ def get_admin_overview_report(request, pk):
             missed_hours = total_hours - total_worked_hours
 
             filtered_data = {
-                "date_range":{"start":start_date.strftime(r"%d-%b-%Y"), "end":end_date.strftime(r"%d-%b-%Y")},
+                "date_range":{"start":start_date.strftime(r"%Y-%m-%d"), "end":end_date.strftime(r"%Y-%m-%d")},
                 "projects": [],
                 "all": {
                     "expected_hours": total_hours,
@@ -2182,7 +2182,7 @@ def get_holiday_report(request):
             filtered_data = {"report": []}
             for holiday in _holidays:
                 holiday_name = holiday.holiday_name
-                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%d-%b-%Y")})
+                filtered_data["report"].append({"name":holiday_name, "date":holiday.holiday_date.strftime(r"%Y-%m-%d")})
             return JsonResponse(filtered_data)
         else:
             messages.error(request, "Something wrong :(")
