@@ -1,26 +1,38 @@
-from django.shortcuts import render, redirect
-from django.db.models import Q
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
-from .models import CustomUser, Project, Activity, Leave, Holiday, ActivityLogs, Profile, Role
-from .forms import ProfileImageForm
-from decimal import Decimal
-from datetime import date
 import calendar
-from calendar import monthcalendar, SATURDAY
-from django.contrib import messages
-from datetime import datetime, timedelta
-from django.db import transaction
-from .tasks import send_notification_email, send_notification_email_recieve_manager, send_notification_email_recieve_admin
-import pandas as pd
-from PIL import Image
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from io import BytesIO
 import copy
 import html
+from calendar import SATURDAY, monthcalendar
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from io import BytesIO
 
+import pandas as pd
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import transaction
+from django.db.models import Q
+from django.shortcuts import redirect, render
+from PIL import Image
 
+from .forms import ProfileImageForm
+from .models import (
+    Activity,
+    ActivityLogs,
+    CustomUser,
+    Holiday,
+    Leave,
+    Profile,
+    Project,
+    Role,
+)
+from .tasks import (
+    send_notification_email,
+    send_notification_email_recieve_admin,
+    send_notification_email_recieve_manager,
+)
 
 #################################################################################
 #  _    _      _                   ______                _   _                  #
@@ -87,7 +99,7 @@ def is_before_11th():
         check if today is earlier than 11
     """
     today = date.today()
-    return today.day <= 11
+    return today.day <= 18
 
 def is_within_current_past_month(q_date):
     """
