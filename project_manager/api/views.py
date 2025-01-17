@@ -1,23 +1,40 @@
-from django.http import JsonResponse
-from django.db.models import F, Sum, Q
-from django.views.decorators.csrf import ensure_csrf_cookie
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
-from datetime import date, timedelta
-from project_manager.models import ActivityLogs, Holiday, Leave, Project, Activity, CustomUser
-from project_manager.models import Role
-from django.db import transaction
-from django.contrib import messages
 import calendar
-from calendar import monthcalendar, SATURDAY
-import pandas as pd
 import json
-from decimal import Decimal
-from django.views.decorators.http import require_POST
-from project_manager.views import get_filtered_dates, is_saturday, get_hours_worked_on_date, check_is_sun_sat
+from calendar import SATURDAY, monthcalendar
 from collections import defaultdict
+from datetime import date, timedelta
+from decimal import Decimal
 
+import pandas as pd
+from django.contrib import messages
+from django.db import transaction
+from django.db.models import F, Q, Sum
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
+from rest_framework.permissions import IsAuthenticated
+
+from project_manager.models import (
+    Activity,
+    ActivityLogs,
+    CustomUser,
+    Holiday,
+    Leave,
+    Project,
+    Role,
+)
+from project_manager.views import (
+    check_is_sun_sat,
+    get_filtered_dates,
+    get_hours_worked_on_date,
+    is_saturday,
+)
 
 #################################################################################
 #  _    _      _                   ______                _   _                  #
@@ -91,28 +108,76 @@ def get_firstday_lastday_specific_month(year: int, month: int):
 
 
 def get_start_end_date(month: str, year: str):
-    start_date = date.today()
-    end_date = date.today()
-    if month == "all":
-        start_date = date(int(year), 1, 1)
-        if date.today().year == int(year):
-            end_date = date.today()
-        else:
-            end_date = date(int(year), 12, 31)
-    else:
-        # if the current month we take it from the first day of the month to the current day
-        if date.today().month == int(month):
-            start_date = date(int(year), int(month), 1)
-            end_date = date.today()
-        else:
-            start_date = date(int(year), int(month), 1)
-            if month == "12":
-                last_month_day = date(int(year) + 1, 1, 1) - start_date
-            else:
-                last_month_day = date(int(year), int(month) + 1, 1) - start_date
-            end_date = date(int(year), int(month), last_month_day.days)
-    return start_date, end_date
+    """
+    Calculate the start and end dates for a given year and month.
 
+    Args:
+        month (str): The month as a string. Can be "all" for the entire year, 
+                     or a numeric string (e.g., "1" for January, "12" for December).
+        year (str): The year as a string (e.g., "2024").
+
+    Returns:
+        tuple: A tuple containing the start_date and end_date as `datetime.date` objects.
+
+    Behavior:
+        1. If `month = "all"`, the start_date is the first day of the given year,
+           and the end_date is either the last day of the year or today's date if it's the current year.
+        2. If `month` is a specific numeric value:
+            - For the current year and month: start_date is the first day of the month,
+              and end_date is today.
+            - For past or future years/months: start_date is the first day of the month,
+              and end_date is the last day of the month.
+
+    Examples:
+        # Example 1: Current year and month
+        today = date(2025, 1, 17)  # Assuming today is January 17, 2025
+        get_start_end_date("1", "2025")
+        # Returns: (datetime.date(2025, 1, 1), datetime.date(2025, 1, 17))
+
+        # Example 2: Current year, "all" months
+        get_start_end_date("all", "2025")
+        # Returns: (datetime.date(2025, 1, 1), datetime.date(2025, 1, 17))
+
+        # Example 3: Last year, specific month
+        get_start_end_date("2", "2024")
+        # Returns: (datetime.date(2024, 2, 1), datetime.date(2024, 2, 29))
+
+        # Example 4: Future year, specific month
+        get_start_end_date("3", "2026")
+        # Returns: (datetime.date(2026, 3, 1), datetime.date(2026, 3, 31))
+
+        # Example 5: Future year, all months
+        get_start_end_date("all", "2026")
+        # Returns: (datetime.date(2026, 1, 1), datetime.date(2026, 12, 31))
+
+    """
+    year = int(year)  # Convert year to integer
+    today = date.today()
+    start_date = end_date = today  # Initialize start and end date to today by default
+
+    if month == "all":
+        # Whole year case
+        start_date = date(year, 1, 1)
+        if today.year == year:  # Current year
+            end_date = today
+        else:  # Any other year
+            end_date = date(year, 12, 31)
+    else:
+        # Specific month case
+        month = int(month)  # Convert month to integer
+        start_date = date(year, month, 1)
+
+        # Calculate the last day of the month
+        if month == 12:  # December case (since it has no month after it)
+            end_date = date(year, 12, 31)
+        else:
+            end_date = date(year, month + 1, 1) - timedelta(days=1)
+
+        # Adjust end_date to today if it's the current month and year
+        if today.year == year and today.month == month:
+            end_date = today
+
+    return start_date, end_date
 
 def daterange(start_date, end_date):
     """
