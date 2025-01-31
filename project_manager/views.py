@@ -50,7 +50,8 @@ def leave_overlap(user, start_date, end_date):
     leave_requests = Leave.objects.filter(
         from_user=user.id,
         start_date__lte=end_date,
-        end_date__gte=start_date
+        end_date__gte=start_date,
+        is_rejected=False
     )
     return any(leave_requests)
 
