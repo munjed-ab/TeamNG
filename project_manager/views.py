@@ -48,10 +48,10 @@ from .tasks import (
 
 def leave_overlap(user, start_date, end_date):
     leave_requests = Leave.objects.filter(
+        Q(is_rejected=False),
         from_user=user.id,
         start_date__lte=end_date,
-        end_date__gte=start_date,
-        is_rejected=False
+        end_date__gte=start_date,   
     )
     return any(leave_requests)
 
